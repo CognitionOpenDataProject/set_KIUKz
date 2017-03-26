@@ -6,21 +6,28 @@ output:
     toc_float: true
 ---
 
-#### Article ID: [Insert article ID number]
-#### Pilot: [Insert name of pilot]
+#### Article ID: KIUKz
+#### Pilot: Maia ten Brink
 #### Co-pilot: Tom Hardwicke  
-#### Start date: [Insert start date - use US format]
+#### Start date: 03/25/17
 #### End date: [Insert end date - use US format]   
 
 -------
 
 #### Methods summary: 
-[Write a brief summary of the methods underlying the target outcomes written in your own words]
+
+Participants completed three tasks: 1) a Familiar Face Recognition Task in which famous faces were presented as targets and unknown faces as distractors; 2) a Human Face Categorization Task in which human faces were presented as targets and animal faces as distractors; and 3) an Individual Face Recognition Task in which different pictures of a single famous individual were presented as targets and unknown faces as distractors. 
+Each task consisted of a block of 140 stimuli presented upright, and a second block of 140 stimuli presented in an inverted orientation. No stimuli were repated.
+To assess recognition, 
+Prior to each task, participants trained on a block of 20 targets and 20 distractors.
 
 ------
 
 #### Target outcomes: 
-[Insert the target outcomes identified in targetOutcomes.md]  
+
+Findings reported in section 3.1: Across participants accuracy. 
+A repeated measures two-way ANOVA on accuracy with task and orientation as factors revealed a clear main effect of the task (F(2, 22) = 784.6; p < 0.0005) and of the orientation (F(1, 23) = 402.3; p < 0.0005), as well as a significant interaction between them (F(2, 22) = 60.2; p < 0.0005). Accuracy was smaller in the Familiar Face Recognition condition than in the Individual Face Recognition, which itself was smaller than in the Human Face Categorization (see Fig. 2A). The Familiar Face Recognition was much more difficult than the Individual Face Recognition and Human Face Categorization and not every participant succeeded on the task. In the upright condition, three participants did not succeed on the Familiar Face Recognition and were thus discarded from the study, while in the inverted condition only a few succeeded at this condition (see Table 1). Furthermore, the effect of inversion was computed (i.e. the difference between inverted face accuracy and upright faces accuracy divided by the upright faces accuracy; e.g. Russell, Duchaine, & Nakayama, 2009) and showed a significant difference between the three task (F(2, 22) = 151.4; p < 0.0005).
+Post-hoc analyses showed that this effect was larger in the Familiar Face Recognition than in the Individual Face Recognition (Familiar Face Recognition: 88.1%, SD = 29.6%; Individual Face Recognition: 44.5%, SD = 9.9%; p < 0.0005), which itself was larger than in the Human Face Categorization (8.1%, SD = 10.7%; p < 0.0005; Fig. 2B).
 
 ------
 
@@ -31,8 +38,6 @@ knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
 ```
 
 ## Step 1: Load packages
-
-[Some useful packages are being loaded below. You can add any additional ones you might need too.]
 
 ```{r}
 library(tidyverse) # for data munging
@@ -45,6 +50,7 @@ library(CODreports) # custom report functions
 ## Step 2: Load data
 
 ```{r}
+read_csv("../data/data.xlsx")
 ```
 
 ## Step 3: Tidy data
