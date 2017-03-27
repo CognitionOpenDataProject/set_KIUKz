@@ -18,7 +18,7 @@ output:
 
 Participants completed three tasks: 1) a Familiar Face Recognition Task in which famous faces were presented as targets and unknown faces as distractors; 2) a Human Face Categorization Task in which human faces were presented as targets and animal faces as distractors; and 3) an Individual Face Recognition Task in which different pictures of a single famous individual were presented as targets and unknown faces as distractors. 
 Each task consisted of a block of 140 stimuli presented upright, and a second block of 140 stimuli presented in an inverted orientation. No stimuli were repated.
-To assess recognition, 
+To assess recognition, each block involved a Speed and Accuracy Boosting (SAB) procedure to force participants to use their fastest strategy and boost accuracy. This involved a Go/No-Go type paradigm in which participants had to respond whether they recognized the stimulus as the target before 600 ms, but had to inhibit response if the stimulus was not the target. If participants responded before the response deadline, they received positive audio feedback indicating whether it was a hit (correct: target) or negative audio feedback indicating a false alarm (incorrect: distractor). If they did not respond before the 600 ms deadline, they received positive audio feedback if the item was a distractor (correct rejection) or target (miss).
 Prior to each task, participants trained on a block of 20 targets and 20 distractors.
 
 ------
@@ -31,48 +31,129 @@ Post-hoc analyses showed that this effect was larger in the Familiar Face Recogn
 
 ------
 
-[The chunk below sets up some formatting options for the R Markdown document]
-
 ```{r global_options, include=FALSE}
+require(knitr)
 knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+#opts_knit$set(root.dir = '/Users/Maia/Desktop/Neuro/Stanford/Classes/PSYCH 254/CognitionOpenData/set_KIUKz')
 ```
 
 ## Step 1: Load packages
 
 ```{r}
+install.packages("ez")
 library(tidyverse) # for data munging
 library(knitr) # for kable table formating
 library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
 library(readxl) # import excel files
 library(CODreports) # custom report functions
+library(ez) # run repeated measures ANOVAs
+library(dplyr) # for working with dataframes
 ```
 
 ## Step 2: Load data
 
 ```{r}
-read_csv("../data/data.xlsx")
+raw_data = read_excel("../data/data.xlsx")
+raw_data = read_excel("/Users/Maia/Desktop/Neuro/Stanford/Classes/PSYCH 254/CognitionOpenData/set_KIUKz/data/data.xlsx")
 ```
 
 ## Step 3: Tidy data
 
 ```{r}
+tidy_data <- raw_data %>%
+  select(-Columns, -Notes,-StimuliSet) %>%
+  transform(InvCond = factor(InvCond, labels=c("Upright","Inverted"))) %>%
+  rename(trial = Trial., subID = Part., cond = Cond., task_num = Task., lat = Lat.) %>%
+  filter(is.na(Stimuli)==FALSE) %>%   #remove missing trials
+  mutate(accuracy = NA)
+
+for (p in 1:dim(tidy_data)[1]) {
+  if (tidy_data$Hit[p] == 1) {
+    tidy_data$accuracy[p] = "Hit"
+  }
+  if (tidy_data$FA[p] == 1) {
+    tidy_data$accuracy[p] = "FalseAlarm"
+  }
+  if (tidy_data$CR[p] == 1) {
+    tidy_data$accuracy[p] = "CorrectRejection"
+  }
+  if (tidy_data$Missed[p] == 1) {
+    tidy_data$accuracy[p] = "Missed"
+  }
+}  
+
+tidy_data <- tidy_data %>%
+  select (-Hit, -FA, -CR, -Missed, -Hits.RT, -FAs.RT)
+
 ```
 
 ## Step 4: Run analysis
 
 ### Pre-processing
 
-[you can remove this section if no pre-processing is required]
+Discrimination index (d') and bias index (*C*) were calculated according to ![Snodgrass & Corwin (1988)] (http://wixtedlab.ucsd.edu/publications/Psych%20218/Snodgrass_Corwin_1988.pdf). The authors calculated RT, mean, and standard deviations based on formulae for log-normal distributions. 
+
+Discrimination index:
+$$d' = z_FA - z_H$$
+where $z_FA$ = z-score of false alarm rate and $z_H$ is the z-score of hit rate
+
+Discrimination index (logistic):
+$$d_L = ln{[(H)(1-FA)]/[(1-H)(FA)]}$$
+where H = hit rate and FA = false alarm rate
+
+Bias index intersection measure:
+$$C = (z_FA + z_H)/2$$
+
+Bias index intersection measure (logistic):
+$$C = [ln{[(1-FA)(1-H)]/[(H)(FA)]}]/2$$
+
+Minimal reaction times (minRTs) were calculated by determining the RT at which the number of hits began to significantly outpace the number of false alarms. Analyses were performed for minRTs by pooling across all participants and all trials for each condition. MinRTs were calculated across all trials using 10 ms bins. MinRT was determined as the *middle* of the first bin that reached significance on a $\chi^2$ between hits and false alarms (*p* < 0.05) and was followed by 3+ significant 10-ms bins. Across participants, minRTs were calculated using 40-ms bins and a Fisher's exact test (*p* < 0.05). When the distribution of hits and false alarms were too close, d' could not be calculated.
+
+The effect of inversion was computed by calculating the difference between inverted face accuracy and upright faces accuracy divided by the upright faces accuracy.
+
+In the upright condition, three participants did not succeed on the Familiar Face Recognition task (hit rate = 0) and were thus discarded from the study.
 
 ```{r}
+d_dprime <- tidy_data %>%
+  group_by(Task, InvCond, subID) %>%
+  summarise(total_H = sum(accuracy=="Hit"), total_FA = sum(accuracy=="FalseAlarm"), total_CR = sum(accuracy=="CorrectRejection"), total_M = sum(accuracy=="Missed")) %>%
+  mutate(total = 140) %>% #140 trials per block
+  mutate(H_rate = total_H/total, FA_rate = total_FA/total) %>% #calculate H and FA rates
+  mutate(H_rate_z = (H_rate - mean(H_rate))/sd(H_rate)) %>% #z-score H rate
+  mutate(FA_rate_z = (FA_rate - mean(FA_rate))/sd(FA_rate)) %>% #z-score FA rate
+  mutate(dprime = FA_rate_z - H_rate_z) %>% #calculate d'
+  mutate(dprime_Lognorm = log((H_rate*(1-FA_rate))/((1-H_rate*FA_rate)))) %>% # calculate d' with lognormal distribution
+  mutate(C = (FA_rate_z + H_rate_z)/2) %>% #calculate C
+  mutate(C_Lognorm = log(((1-FA_rate_z)*(1-H_rate_z))/(H_rate_z*FA_rate_z))/2) #calculate C with lognormal distribution
+
+
+d_inv <- d_dprime %>%
+  group_by(Task, subID, InvCond) %>%
+  summarise(mean_dprime = mean(dprime), sd_dprime = sd(dprime)) %>%
+  mutate() #effect of inversion on accuracy
+
+
+target = c("Hit","FalseAlarm")
+d_minRT <- tidy_data %>%
+  filter(accuracy==target) %>% #only examine hits and false alarms
+  group_by(Task, InvCond, subID, accuracy) %>%
+  summarise(mean_RT = mean(RT)) %>%
+  spread(accuracy, mean_RT) %>%
+  mutate(minRT_bin = ceiling(RT/10)) %>%  #bin RTs into 10-ms bin
+  
+  
+
 ```
 
 ### Descriptive statistics
 
 ```{r}
+
 ```
 
 ### Inferential statistics
+
+P-values for minRT were corrected with Bonferroni correction for multiple comparisons.
 
 ```{r}
 ```
