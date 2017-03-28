@@ -42,12 +42,15 @@ knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
 ```{r}
 install.packages("ez")
 library(tidyverse) # for data munging
+library(tidyr)
+library(dplyr) # for working with dataframes
+library(tibble)
 library(knitr) # for kable table formating
 library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
 library(readxl) # import excel files
 library(CODreports) # custom report functions
+library(ggthemes)
 library(ez) # run repeated measures ANOVAs
-library(dplyr) # for working with dataframes
 ```
 
 ## Step 2: Load data
@@ -91,23 +94,11 @@ tidy_data <- tidy_data %>%
 
 ### Pre-processing
 
-Discrimination index (d') and bias index (*C*) were calculated according to ![Snodgrass & Corwin (1988)] (http://wixtedlab.ucsd.edu/publications/Psych%20218/Snodgrass_Corwin_1988.pdf). The authors calculated RT, mean, and standard deviations based on formulae for log-normal distributions. 
+Discrimination index (d'), i.e. "accuracy," was calculated according to ![Snodgrass & Corwin (1988)] (http://wixtedlab.ucsd.edu/publications/Psych%20218/Snodgrass_Corwin_1988.pdf).
 
 Discrimination index:
-$$d' = z_FA - z_H$$
+$$d' = z_H - z_FA$$
 where $z_FA$ = z-score of false alarm rate and $z_H$ is the z-score of hit rate
-
-Discrimination index (logistic):
-$$d_L = ln{[(H)(1-FA)]/[(1-H)(FA)]}$$
-where H = hit rate and FA = false alarm rate
-
-Bias index intersection measure:
-$$C = (z_FA + z_H)/2$$
-
-Bias index intersection measure (logistic):
-$$C = [ln{[(1-FA)(1-H)]/[(H)(FA)]}]/2$$
-
-Minimal reaction times (minRTs) were calculated by determining the RT at which the number of hits began to significantly outpace the number of false alarms. Analyses were performed for minRTs by pooling across all participants and all trials for each condition. MinRTs were calculated across all trials using 10 ms bins. MinRT was determined as the *middle* of the first bin that reached significance on a $\chi^2$ between hits and false alarms (*p* < 0.05) and was followed by 3+ significant 10-ms bins. Across participants, minRTs were calculated using 40-ms bins and a Fisher's exact test (*p* < 0.05). When the distribution of hits and false alarms were too close, d' could not be calculated.
 
 The effect of inversion was computed by calculating the difference between inverted face accuracy and upright faces accuracy divided by the upright faces accuracy.
 
@@ -119,43 +110,45 @@ d_dprime <- tidy_data %>%
   summarise(total_H = sum(accuracy=="Hit"), total_FA = sum(accuracy=="FalseAlarm"), total_CR = sum(accuracy=="CorrectRejection"), total_M = sum(accuracy=="Missed")) %>%
   mutate(total = 140) %>% #140 trials per block
   mutate(H_rate = total_H/total, FA_rate = total_FA/total) %>% #calculate H and FA rates
+  filter(H_rate > 0.02) %>% #remove participants who were unsuccessful at FFR task
   mutate(H_rate_z = (H_rate - mean(H_rate))/sd(H_rate)) %>% #z-score H rate
   mutate(FA_rate_z = (FA_rate - mean(FA_rate))/sd(FA_rate)) %>% #z-score FA rate
-  mutate(dprime = FA_rate_z - H_rate_z) %>% #calculate d'
-  mutate(dprime_Lognorm = log((H_rate*(1-FA_rate))/((1-H_rate*FA_rate)))) %>% # calculate d' with lognormal distribution
-  mutate(C = (FA_rate_z + H_rate_z)/2) %>% #calculate C
-  mutate(C_Lognorm = log(((1-FA_rate_z)*(1-H_rate_z))/(H_rate_z*FA_rate_z))/2) #calculate C with lognormal distribution
-
+  mutate(dprime = H_rate_z - FA_rate_z) #calculate d' %>%
 
 d_inv <- d_dprime %>%
   group_by(Task, subID, InvCond) %>%
-  summarise(mean_dprime = mean(dprime), sd_dprime = sd(dprime)) %>%
-  mutate() #effect of inversion on accuracy
-
-
-target = c("Hit","FalseAlarm")
-d_minRT <- tidy_data %>%
-  filter(accuracy==target) %>% #only examine hits and false alarms
-  group_by(Task, InvCond, subID, accuracy) %>%
-  summarise(mean_RT = mean(RT)) %>%
-  spread(accuracy, mean_RT) %>%
-  mutate(minRT_bin = ceiling(RT/10)) %>%  #bin RTs into 10-ms bin
-  
-  
+  summarise(mean_dprime = mean(dprime)) %>%
+  spread(InvCond,mean_dprime) %>%
+  mutate(inv_eff = (Upright - Inverted)/Upright) #effect of inversion on accuracy
 
 ```
 
 ### Descriptive statistics
 
 ```{r}
+descript_d_dprime <- d_dprime %>%
+  group_by(Task, InvCond) %>%
+  summarise(mean_dprime = mean(dprime,na.rm=TRUE), sd_dprime = sd(dprime, na.rm=TRUE))
 
+#NB: for some reason mean() doesn't seem to be calculating correctly. I tried extensively to troubleshoot it but couldn't figure it out.
+
+print(descript_d_dprime)
 ```
 
 ### Inferential statistics
 
-P-values for minRT were corrected with Bonferroni correction for multiple comparisons.
-
 ```{r}
+res1 = 
+
+ggplot(data=d_dprime,
+  aes(x = InvCond, y = dprime, color = Task)) +
+  geom_boxplot(notch=TRUE) +
+  ggthemes::theme_few() +
+  xlab("Position") +
+  ylab("Accuracy (d')")
+
+
+d_inv 
 ```
 
 ## Step 5: Conclusion
