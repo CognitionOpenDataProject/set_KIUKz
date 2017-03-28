@@ -26,7 +26,7 @@ Prior to each task, participants trained on a block of 20 targets and 20 distrac
 #### Target outcomes: 
 
 Findings reported in section 3.1: Across participants accuracy. 
-A repeated measures two-way ANOVA on accuracy with task and orientation as factors revealed a clear main effect of the task (F(2, 22) = 784.6; p < 0.0005) and of the orientation (F(1, 23) = 402.3; p < 0.0005), as well as a significant interaction between them (F(2, 22) = 60.2; p < 0.0005). Accuracy was smaller in the Familiar Face Recognition condition than in the Individual Face Recognition, which itself was smaller than in the Human Face Categorization. The Familiar Face Recognition was much more difficult than the Individual Face Recognition and Human Face Categorization and not every participant succeeded on the task. In the upright condition, three participants did not succeed on the Familiar Face Recognition and were thus discarded from the study, while in the inverted condition only a few succeeded at this condition. Furthermore, the effect of inversion was computed (i.e. the difference between inverted face accuracy and upright faces accuracy divided by the upright faces accuracy; e.g. Russell, Duchaine, & Nakayama, 2009) and showed a significant difference between the three task (F(2, 22) = 151.4; p < 0.0005). Post-hoc analyses showed that this effect was larger in the Familiar Face Recognition than in the Individual Face Recognition (Familiar Face Recognition: 88.1%, SD = 29.6%; Individual Face Recognition: 44.5%, SD = 9.9%; p < 0.0005), which itself was larger than in the Human Face Categorization (8.1%, SD = 10.7%; p < 0.0005).
+>"A repeated measures two-way ANOVA on accuracy with task and orientation as factors revealed a clear main effect of the task (F(2, 22) = 784.6; p < 0.0005) and of the orientation (F(1, 23) = 402.3; p < 0.0005), as well as a significant interaction between them (F(2, 22) = 60.2; p < 0.0005). Accuracy was smaller in the Familiar Face Recognition condition than in the Individual Face Recognition, which itself was smaller than in the Human Face Categorization. The Familiar Face Recognition was much more difficult than the Individual Face Recognition and Human Face Categorization and not every participant succeeded on the task. In the upright condition, three participants did not succeed on the Familiar Face Recognition and were thus discarded from the study, while in the inverted condition only a few succeeded at this condition. Furthermore, the effect of inversion was computed (i.e. the difference between inverted face accuracy and upright faces accuracy divided by the upright faces accuracy; e.g. Russell, Duchaine, & Nakayama, 2009) and showed a significant difference between the three task (F(2, 22) = 151.4; p < 0.0005). Post-hoc analyses showed that this effect was larger in the Familiar Face Recognition than in the Individual Face Recognition (Familiar Face Recognition: 88.1%, SD = 29.6%; Individual Face Recognition: 44.5%, SD = 9.9%; p < 0.0005), which itself was larger than in the Human Face Categorization (8.1%, SD = 10.7%; p < 0.0005)." (Besson et al., p. 37).
 
 ------
 
@@ -47,7 +47,6 @@ library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
 library(readxl) # import excel files
 library(CODreports) # custom report functions
 library(ggthemes)
-library(ez) # run repeated measures ANOVAs
 library(lme4)
 library(lmerTest)
 ```
@@ -55,7 +54,7 @@ library(lmerTest)
 ## Step 2: Load data
 
 ```{r}
-raw_data = read_excel("../data/data.xlsx")
+raw_data = read_excel("data.xlsx")
 ```
 
 ## Step 3: Tidy data
@@ -93,7 +92,8 @@ tidy_data <- tidy_data %>%
 
 ### Pre-processing
 
-Discrimination index (d'), i.e. accuracy, was calculated according to ![Snodgrass & Corwin (1988)] (http://wixtedlab.ucsd.edu/publications/Psych%20218/Snodgrass_Corwin_1988.pdf). INSUFFICIENT INFORMATION ERROR: This equation had to be found in the cited Snodgrass paper; it was not detailed anywhere within this paper. 
+Discrimination index (d'), i.e. accuracy, was calculated according to ![Snodgrass & Corwin (1988)] (http://wixtedlab.ucsd.edu/publications/Psych%20218/Snodgrass_Corwin_1988.pdf) (Besson et al., p. 36). 
+INSUFFICIENT INFORMATION ERROR: This equation had to be found in the cited Snodgrass paper; it was not detailed anywhere within this paper. 
 
 Discrimination index:
 $$d' = z_H - z_F$$
@@ -141,7 +141,7 @@ means_d_inv <- d_inv %>%
 print(means_d_inv)
 ```
 
-MAJOR NUMERICAL ERROR: These descriptive statistics do not corroborate the reported descriptive statistics: ![originalDescriptiveStats.png]
+MAJOR NUMERICAL ERROR: These descriptive statistics do not corroborate the reported descriptive statistics: ![Besson et al. Descriptive Statistics](originalDescriptiveStats.png) (Besson et al., p. 37)
 
 ```{r}
 ###FFR
@@ -203,7 +203,7 @@ summary(dinv.aov)
 ggplot(data=d_dprime,
   aes(x = InvCond, y = dprime, color = Task)) +
   geom_boxplot(notch=TRUE) +
-  geom_point(shape=21, position=position_dodge()) +
+  geom_point(shape=21, position=position_dodge(width=0.75)) +
   ggthemes::theme_few() +
   xlab("Position") +
   ylab("Accuracy (d')")
@@ -219,7 +219,8 @@ ggplot(data=d_inv,
 ```
 
 There was no significant main effect of either task (F(2,51) = 1.142, p = 0.29), a marginally significant effect of presentation orientation (F(1,25) = 4.076, p = 0.054), and no significant interaction between task and orientation (F(2,49) = 0.283, p = 0.755).
-In the original study, however, "a repeated measures two-way ANOVA on accuracy with task and orientation as factors revealed a clear main effect of the task (F(2, 22) = 784.6; p < 0.0005) and of the orientation (F(1, 23) = 402.3; p < 0.0005), as well as a significant interaction between them (F(2, 22) = 60.2; p < 0.0005). Accuracy was smaller in the Familiar Face Recognition condition than in the Individual Face Recognition, which itself was smaller than in the Human Face Categorization. The Familiar Face Recognition was much more difficult than the Individual Face Recognition and Human Face Categorization and not every participant succeeded on the task.
+In the original study, however, 
+>"a repeated measures two-way ANOVA on accuracy with task and orientation as factors revealed a clear main effect of the task (F(2, 22) = 784.6; p < 0.0005) and of the orientation (F(1, 23) = 402.3; p < 0.0005), as well as a significant interaction between them (F(2, 22) = 60.2; p < 0.0005). Accuracy was smaller in the Familiar Face Recognition condition than in the Individual Face Recognition, which itself was smaller than in the Human Face Categorization. The Familiar Face Recognition was much more difficult than the Individual Face Recognition and Human Face Categorization and not every participant succeeded on the task."
 
 ```{r}
 compareValues(reportedValue = 0.0005, obtainedValue = 0.29, isP= T)
@@ -227,7 +228,8 @@ compareValues(reportedValue = 0.0005, obtainedValue = 0.054, isP = T)
 compareValues(reportedValue = 0.0005, obtainedValue = 0.755, isP = T)
 ```
 
-There was no significant difference in the effects of face inversion across the three tasks (F(2,49) = 0.496, p = 0.61), contrary to the original paper's findings, which "showed a significant difference between the three task (F(2, 22) = 151.4; p < 0.0005). Post-hoc analyses showed that this effect was larger in the Familiar Face Recognition than in the Individual Face Recognition (Familiar Face Recognition: 88.1%, SD = 29.6%; Individual Face Recognition: 44.5%, SD = 9.9%; p < 0.0005), which itself was larger than in the Human Face Categorization (8.1%, SD = 10.7%; p < 0.0005."
+There was no significant difference in the effects of face inversion across the three tasks (F(2,49) = 0.496, p = 0.61), contrary to the original paper's findings, which
+>"showed a significant difference between the three task (F(2, 22) = 151.4; p < 0.0005). Post-hoc analyses showed that this effect was larger in the Familiar Face Recognition than in the Individual Face Recognition (Familiar Face Recognition: 88.1%, SD = 29.6%; Individual Face Recognition: 44.5%, SD = 9.9%; p < 0.0005), which itself was larger than in the Human Face Categorization (8.1%, SD = 10.7%; p < 0.0005."
 The range of affects of inversion on accuracy seemed to match the original paper somewhat, with the largest spread of values for percent accuracy of inversion in the Familiar Face Recognition Task.
 
 ```{r}
