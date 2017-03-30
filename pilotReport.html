@@ -224,24 +224,22 @@ div.tocify {
 <div id="pilot-maia-ten-brink" class="section level4">
 <h4>Pilot: Maia ten Brink</h4>
 </div>
-<div id="co-pilot-tom-hardwicke" class="section level4">
-<h4>Co-pilot: Tom Hardwicke</h4>
-</div>
 <div id="start-date-032517" class="section level4">
 <h4>Start date: 03/25/17</h4>
 </div>
-<div id="end-date-insert-end-date---use-us-format" class="section level4">
-<h4>End date: [Insert end date - use US format]</h4>
+<div id="end-date-03272017" class="section level4">
+<h4>End date: 03/27/2017</h4>
 <hr />
 </div>
 <div id="methods-summary" class="section level4">
 <h4>Methods summary:</h4>
-<p>Participants completed three tasks: 1) a Familiar Face Recognition Task in which famous faces were presented as targets and unknown faces as distractors; 2) a Human Face Categorization Task in which human faces were presented as targets and animal faces as distractors; and 3) an Individual Face Recognition Task in which different pictures of a single famous individual were presented as targets and unknown faces as distractors. Each task consisted of a block of 140 stimuli presented upright, and a second block of 140 stimuli presented in an inverted orientation. No stimuli were repated. To assess recognition, each block involved a Speed and Accuracy Boosting (SAB) procedure to force participants to use their fastest strategy and boost accuracy. This involved a Go/No-Go type paradigm in which participants had to respond whether they recognized the stimulus as the target before 600 ms, but had to inhibit response if the stimulus was not the target. If participants responded before the response deadline, they received positive audio feedback indicating whether it was a hit (correct: target) or negative audio feedback indicating a false alarm (incorrect: distractor). If they did not respond before the 600 ms deadline, they received positive audio feedback if the item was a distractor (correct rejection) or target (miss). Prior to each task, participants trained on a block of 20 targets and 20 distractors.</p>
+<p>Participants completed three tasks: 1) a Familiar Face Recognition Task in which famous faces were presented as targets and unknown faces as distractors; 2) a Human Face Categorization Task in which human faces were presented as targets and animal faces as distractors; and 3) an Individual Face Recognition Task in which different pictures of a single famous individual were presented as targets and unknown faces as distractors. Each task consisted of a block of 140 stimuli presented upright, and a second block of 140 stimuli presented in an inverted orientation. No stimuli were repated.</p>
+<p>To assess recognition, each block involved a Speed and Accuracy Boosting (SAB) procedure to force participants to use their fastest strategy and boost accuracy. This involved a Go/No-Go type paradigm in which participants had to respond whether they recognized the stimulus as the target before 600 ms, but had to inhibit response if the stimulus was not the target. If participants responded before the response deadline, they received positive audio feedback indicating whether it was a hit (correct: target) or negative audio feedback indicating a false alarm (incorrect: distractor). If they did not respond before the 600 ms deadline, they received positive audio feedback if the item was a distractor (correct rejection) or target (miss). Prior to each task, participants trained on a block of 20 targets and 20 distractors.</p>
 <hr />
 </div>
 <div id="target-outcomes" class="section level4">
 <h4>Target outcomes:</h4>
-<p>Findings reported in section 3.1: Across participants accuracy. &gt;“A repeated measures two-way ANOVA on accuracy with task and orientation as factors revealed a clear main effect of the task (F(2, 22) = 784.6; p &lt; 0.0005) and of the orientation (F(1, 23) = 402.3; p &lt; 0.0005), as well as a significant interaction between them (F(2, 22) = 60.2; p &lt; 0.0005). Accuracy was smaller in the Familiar Face Recognition condition than in the Individual Face Recognition, which itself was smaller than in the Human Face Categorization. The Familiar Face Recognition was much more difficult than the Individual Face Recognition and Human Face Categorization and not every participant succeeded on the task. In the upright condition, three participants did not succeed on the Familiar Face Recognition and were thus discarded from the study, while in the inverted condition only a few succeeded at this condition. Furthermore, the effect of inversion was computed (i.e. the difference between inverted face accuracy and upright faces accuracy divided by the upright faces accuracy; e.g. Russell, Duchaine, &amp; Nakayama, 2009) and showed a significant difference between the three task (F(2, 22) = 151.4; p &lt; 0.0005). Post-hoc analyses showed that this effect was larger in the Familiar Face Recognition than in the Individual Face Recognition (Familiar Face Recognition: 88.1%, SD = 29.6%; Individual Face Recognition: 44.5%, SD = 9.9%; p &lt; 0.0005), which itself was larger than in the Human Face Categorization (8.1%, SD = 10.7%; p &lt; 0.0005).” (Besson et al., p. 37).</p>
+<p>Findings reported in section 3.1: Across participants accuracy. &gt; “A repeated measures two-way ANOVA on accuracy with task and orientation as factors revealed a clear main effect of the task (F(2, 22) = 784.6; p &lt; 0.0005) and of the orientation (F(1, 23) = 402.3; p &lt; 0.0005), as well as a significant interaction between them (F(2, 22) = 60.2; p &lt; 0.0005). Accuracy was smaller in the Familiar Face Recognition condition than in the Individual Face Recognition, which itself was smaller than in the Human Face Categorization. The Familiar Face Recognition was much more difficult than the Individual Face Recognition and Human Face Categorization and not every participant succeeded on the task. In the upright condition, three participants did not succeed on the Familiar Face Recognition and were thus discarded from the study, while in the inverted condition only a few succeeded at this condition. Furthermore, the effect of inversion was computed (i.e. the difference between inverted face accuracy and upright faces accuracy divided by the upright faces accuracy; e.g. Russell, Duchaine, &amp; Nakayama, 2009) and showed a significant difference between the three task (F(2, 22) = 151.4; p &lt; 0.0005). Post-hoc analyses showed that this effect was larger in the Familiar Face Recognition than in the Individual Face Recognition (Familiar Face Recognition: 88.1%, SD = 29.6%; Individual Face Recognition: 44.5%, SD = 9.9%; p &lt; 0.0005), which itself was larger than in the Human Face Categorization (8.1%, SD = 10.7%; p &lt; 0.0005).” (Besson et al., p. 37).</p>
 <hr />
 </div>
 <div id="step-1-load-packages" class="section level2">
@@ -504,102 +502,128 @@ summary(dinv.aov)</code></pre>
 <p>It is my sense, however, that I have failed to appropriately reproduce their analysis in some way because of my own confusion about how to carry out their analytical method because of INCOMPLETE INFORMATION ERROR, rather than missing or excluded data.</p>
 <pre class="r"><code>devtools::session_info()</code></pre>
 <pre><code>##  setting  value                       
-##  version  R version 3.3.3 (2017-03-06)
+##  version  R version 3.3.2 (2016-10-31)
 ##  system   x86_64, darwin13.4.0        
 ##  ui       X11                         
 ##  language (EN)                        
 ##  collate  en_US.UTF-8                 
 ##  tz       America/Los_Angeles         
-##  date     2017-03-28                  
+##  date     2017-03-30                  
 ## 
-##  package      * version  date      
-##  acepack        1.3-3.3  2014-11-24
-##  assertthat     0.1      2013-12-06
-##  backports      1.0.5    2017-01-18
-##  broom          0.4.2    2017-02-13
-##  chron          2.3-47   2015-06-24
-##  cluster        2.0.5    2016-10-08
-##  CODreports   * 0.1      2017-03-26
-##  colorspace     1.2-6    2015-03-11
-##  data.table     1.9.6    2015-09-19
-##  DBI            0.5-1    2016-09-10
-##  devtools       1.12.0   2016-06-24
-##  digest         0.6.12   2017-01-27
-##  dplyr        * 0.5.0    2016-06-24
-##  evaluate       0.10     2016-10-11
-##  forcats        0.2.0    2017-01-23
-##  foreign        0.8-67   2016-09-13
-##  Formula        1.2-1    2015-04-07
-##  ggplot2      * 2.2.1    2016-12-30
-##  ggthemes     * 3.3.0    2016-11-24
-##  gridExtra      2.2.1    2016-02-29
-##  gtable         0.2.0    2016-02-26
-##  haven        * 1.0.0    2016-09-23
-##  highr          0.6      2016-05-09
-##  Hmisc          3.17-4   2016-05-02
-##  hms            0.3      2016-11-22
-##  htmltools      0.3.5    2016-03-21
-##  httr           1.2.1    2016-07-03
-##  jsonlite       1.3      2017-02-28
-##  knitr        * 1.15.1   2016-11-22
-##  labeling       0.3      2014-08-23
-##  lattice        0.20-34  2016-09-06
-##  latticeExtra   0.6-28   2016-02-09
-##  lazyeval       0.2.0    2016-06-12
-##  lme4         * 1.1-12   2016-04-16
-##  lmerTest     * 2.0-33   2016-12-03
-##  lubridate      1.6.0    2016-09-13
-##  magrittr       1.5      2014-11-22
-##  MASS           7.3-45   2016-04-21
-##  Matrix       * 1.2-8    2017-01-20
-##  memoise        1.0.0    2016-01-29
-##  minqa          1.2.4    2014-10-09
-##  mnormt         1.5-5    2016-10-15
-##  modelr         0.1.0    2016-08-31
-##  munsell        0.4.3    2016-02-13
-##  nlme           3.1-131  2017-02-06
-##  nloptr         1.0.4    2014-08-04
-##  nnet           7.3-12   2016-02-02
-##  plyr           1.8.4    2016-06-08
-##  psych          1.7.3.21 2017-03-22
-##  purrr        * 0.2.2    2016-06-18
-##  R6             2.2.0    2016-10-05
-##  RColorBrewer   1.1-2    2014-12-07
-##  Rcpp           0.12.10  2017-03-19
-##  readr        * 1.1.0    2017-03-22
-##  readxl       * 0.1.1    2016-03-28
-##  reshape2       1.4.2    2016-10-22
-##  rmarkdown      1.3      2016-12-21
-##  rpart          4.1-10   2015-06-29
-##  rprojroot      1.2      2017-01-16
-##  rvest          0.3.2    2016-06-17
-##  scales         0.4.1    2016-11-09
-##  stringi        1.1.3    2017-03-21
-##  stringr        1.2.0    2017-02-18
-##  survival       2.40-1   2016-10-30
-##  tibble       * 1.2      2016-08-26
-##  tidyr        * 0.6.1    2017-01-10
-##  tidyverse    * 1.1.1    2017-01-27
-##  withr          1.0.2    2016-06-20
-##  xml2           1.1.1    2017-01-24
-##  yaml           2.1.14   2016-11-12
+##  package      * version date      
+##  acepack        1.4.1   2016-10-29
+##  assertthat     0.1     2013-12-06
+##  backports      1.0.5   2017-01-18
+##  base64enc      0.1-3   2015-07-28
+##  broom          0.4.2   2017-02-13
+##  checkmate      1.8.2   2016-11-02
+##  cluster        2.0.5   2016-10-08
+##  CODreports   * 0.1     2017-03-26
+##  colorspace     1.3-2   2016-12-14
+##  data.table     1.10.0  2016-12-03
+##  DBI            0.5-1   2016-09-10
+##  devtools       1.12.0  2016-06-24
+##  digest         0.6.11  2017-01-03
+##  dplyr        * 0.5.0   2016-06-24
+##  evaluate       0.10    2016-10-11
+##  forcats        0.2.0   2017-01-23
+##  foreign        0.8-67  2016-09-13
+##  Formula        1.2-1   2015-04-07
+##  ggplot2      * 2.2.1   2016-12-30
+##  ggthemes     * 3.4.0   2017-02-19
+##  gridExtra      2.2.1   2016-02-29
+##  gtable         0.2.0   2016-02-26
+##  haven        * 1.0.0   2016-09-23
+##  highr          0.6     2016-05-09
+##  Hmisc          4.0-2   2016-12-31
+##  hms            0.3     2016-11-22
+##  htmlTable      1.9     2017-01-26
+##  htmltools      0.3.5   2016-03-21
+##  htmlwidgets    0.8     2016-11-09
+##  httr           1.2.1   2016-07-03
+##  jsonlite       1.3     2017-02-28
+##  knitr        * 1.15.1  2016-11-22
+##  labeling       0.3     2014-08-23
+##  lattice        0.20-34 2016-09-06
+##  latticeExtra   0.6-28  2016-02-09
+##  lazyeval       0.2.0   2016-06-12
+##  lme4         * 1.1-12  2016-04-16
+##  lmerTest     * 2.0-33  2016-12-03
+##  lubridate      1.6.0   2016-09-13
+##  magrittr       1.5     2014-11-22
+##  MASS           7.3-45  2016-04-21
+##  Matrix       * 1.2-7.1 2016-09-01
+##  memoise        1.0.0   2016-01-29
+##  minqa          1.2.4   2014-10-09
+##  mnormt         1.5-5   2016-10-15
+##  modelr         0.1.0   2016-08-31
+##  munsell        0.4.3   2016-02-13
+##  nlme           3.1-128 2016-05-10
+##  nloptr         1.0.4   2014-08-04
+##  nnet           7.3-12  2016-02-02
+##  plyr           1.8.4   2016-06-08
+##  psych          1.6.12  2017-01-08
+##  purrr        * 0.2.2   2016-06-18
+##  R6             2.2.0   2016-10-05
+##  RColorBrewer   1.1-2   2014-12-07
+##  Rcpp           0.12.9  2017-01-14
+##  readr        * 1.0.0   2016-08-03
+##  readxl       * 0.1.1   2016-03-28
+##  reshape2       1.4.2   2016-10-22
+##  rmarkdown      1.3     2017-02-08
+##  rpart          4.1-10  2015-06-29
+##  rprojroot      1.2     2017-01-16
+##  rvest          0.3.2   2016-06-17
+##  scales         0.4.1   2016-11-09
+##  stringi        1.1.2   2016-10-01
+##  stringr        1.2.0   2017-02-18
+##  survival       2.41-2  2017-03-16
+##  tibble       * 1.2     2016-08-26
+##  tidyr        * 0.6.1   2017-01-10
+##  tidyverse    * 1.1.1   2017-01-27
+##  withr          1.0.2   2016-06-20
+##  xml2           1.1.1   2017-01-24
+##  yaml           2.1.14  2016-11-12
 ##  source                                              
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.2)                                      
-##  cran (@0.4.2)                                       
 ##  CRAN (R 3.3.0)                                      
-##  CRAN (R 3.3.3)                                      
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.2)                                      
 ##  Github (CognitionOpenDataProject/CODreports@b5f7566)
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
-##  cran (@0.6.12)                                      
-##  CRAN (R 3.3.0)                                      
-##  cran (@0.10)                                        
 ##  cran (@0.2.0)                                       
-##  CRAN (R 3.3.3)                                      
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.2)                                      
@@ -608,52 +632,32 @@ summary(dinv.aov)</code></pre>
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
-##  cran (@0.3)                                         
+##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.0)                                      
-##  CRAN (R 3.3.0)                                      
-##  cran (@1.3)                                         
-##  cran (@1.15.1)                                      
-##  CRAN (R 3.3.0)                                      
-##  CRAN (R 3.3.3)                                      
-##  CRAN (R 3.3.0)                                      
-##  CRAN (R 3.3.0)                                      
+##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
-##  CRAN (R 3.3.3)                                      
-##  CRAN (R 3.3.3)                                      
+##  CRAN (R 3.3.0)                                      
+##  cran (@0.12.9)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.0)                                      
-##  cran (@1.5-5)                                       
 ##  CRAN (R 3.3.0)                                      
-##  CRAN (R 3.3.0)                                      
-##  CRAN (R 3.3.3)                                      
-##  CRAN (R 3.3.0)                                      
-##  CRAN (R 3.3.3)                                      
-##  CRAN (R 3.3.0)                                      
-##  cran (@1.7.3.2)                                     
-##  CRAN (R 3.3.0)                                      
-##  cran (@2.2.0)                                       
-##  CRAN (R 3.3.0)                                      
-##  cran (@0.12.10)                                     
-##  cran (@1.1.0)                                       
-##  CRAN (R 3.3.0)                                      
-##  cran (@1.4.2)                                       
-##  CRAN (R 3.3.1)                                      
-##  CRAN (R 3.3.3)                                      
+##  Github (rstudio/rmarkdown@d1ba313)                  
+##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  CRAN (R 3.3.2)                                      
-##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.0)                                      
 ##  cran (@1.2.0)                                       
-##  CRAN (R 3.3.3)                                      
+##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.0)                                      
-##  cran (@0.6.1)                                       
-##  cran (@1.1.1)                                       
+##  CRAN (R 3.3.2)                                      
+##  CRAN (R 3.3.2)                                      
 ##  CRAN (R 3.3.0)                                      
 ##  cran (@1.1.1)                                       
-##  cran (@2.1.14)</code></pre>
+##  CRAN (R 3.3.2)</code></pre>
 </div>
 
 
