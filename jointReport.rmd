@@ -14,10 +14,11 @@ output:
 
 -------
 
+
 #### Methods summary: 
 
 Participants completed three tasks: 1) a Familiar Face Recognition Task (FFR) in which famous faces were presented as targets and unknown faces as distractors; 2) a Human Face Categorization Task (HFC) in which human faces were presented as targets and animal faces as distractors; and 3) an Individual Face Recognition Task (IFR) in which different pictures of a single famous individual were presented as targets and unknown faces as distractors. 
-Each task consisted of a block of 140 stimuli presented upright, and a second block of 140 stimuli presented in an inverted orientation. No stimuli were repated.
+Each task consisted of a block of 140 stimuli presented upright, and a second block of 140 stimuli presented in an inverted orientation. No stimuli were repeated.
 
 To assess recognition, each block involved a Speed and Accuracy Boosting (SAB) procedure to force participants to use their fastest strategy and boost accuracy. This involved a Go/No-Go type paradigm in which participants had to respond whether they recognized the stimulus as the target before 600 ms, but had to inhibit response if the stimulus was not the target. If participants responded before the response deadline, they received positive audio feedback indicating whether it was a hit (correct: target) or negative audio feedback indicating a false alarm (incorrect: distractor). If they did not respond before the 600 ms deadline, they received positive audio feedback if the item was a distractor (correct rejection) or target (miss). Prior to each task, participants trained on a block of 20 targets and 20 distractors.
 
@@ -54,12 +55,124 @@ library(lmerTest)
 ## Step 2: Load data
 
 ```{r}
+setwd("~/Dropbox/Personal computer/Independent studies/Mike's Cognition project on data sharing policy/Co-piloting/Copilot #1/set_KIUKz")
 raw_data = read_excel("data.xlsx")
 
 # check number of subjects
 dim( unique(raw_data[,1]) )
 # 28 vs. 27 in paper
 ```
+
+
+
+
+## Copilot explores
+
+### MM's notes to self
+
+Currently calcuating H and FA using Snodgrass correction, then using difference of z-scores (per the below tutorial and Snodgrass' two-high-threshold model) for d'. However, even the hit rates themselves (both raw and uncorrected) don't match those in the paper. 
+
+SDT reference (computation of z-scores):
+http://wise.cgu.edu/wise-tutorials/tutorial-signal-detection-theory/signal-detection-d-defined-2/
+
+
+
+### Try to understand d-prime
+```{r}
+# MM experiments
+# two high-threshold version
+dprime1 = function(f, h){
+  if (f > h) stop("use other equation")
+  return( 0.5 + ( (h-f)*(1+h-f) ) / ( 4*h*(1-f) ) )
+}
+
+# logistic version
+dprime2 = function(f, h){
+  return( log( ( h*(1-f) ) / ( f*(1-h) ) ) )
+}
+
+# Z-score, unpooled
+# THIS SEEMS TO BE WHAT THEY USE IN THE TABLE
+dprime3 = function(f, h){
+  return( -qnorm(f) + qnorm(h) )
+}
+
+# see if we can recover the d' in table from the table's own hit rates
+dprime1(.25, .63)
+dprime2(.25, .63)
+dprime3(.25, .63)
+
+# below is close, probably within rounding error
+# since table only has a 
+dprime3(.25, .63)
+dprime3(.41, .45)
+dprime3(.04, .99)
+
+# how many trials are there?
+d = data.frame(raw_data)
+table(d$Task)
+```
+Conclusion: d-prime calculation is unlikely to be the problem. They used the Snodgrass correction, as stated in paper, which pilot did not use. More importantly, the pilot computed the z-scores wrong. Authors did not exactly specify what version of d' they used, but their apparent choice (based on the above) is definitely the most common.
+
+Under "Descriptive Statistics", I added some code that shows that the hit rates themselves are way off. 
+
+
+### Figure out what is wrong with hit rates
+```{r}
+##### MANUALLY ATTEMPT TO REPRODUCE SINGLE CELL IN TABLE 1 ##### 
+# for debugging purposes, focus only on first hit rate in Table 1
+# reported: 63% for upright FFR
+temp = d[ d$Task=="FFR" & d$InvCond==0, ]
+#temp = d[ d$Cond.==1, ]
+#temp = d[ d$Task=="FFR" & d$InvCond==1, ]
+
+length(unique(temp$Part.))  # n=28
+
+# marginal mean hit rate
+mean(temp$Hit, na.rm=TRUE)
+# this is already very wrong: 0.29 vs. 0.63 reported
+
+# look at hit rates on this task by subject
+# first raw hit rate
+library(data.table)
+dt = data.table(temp)
+dt[, prop.hit := mean( Hit, na.rm=TRUE ), by=Part. ]
+
+# now with Snodgrass correction
+dt[, n.trials := .N, by=Part. ]
+dt[, hit.sum := sum(Hit), by=Part. ]
+dt[, prop.hit.C := (hit.sum+0.5)/(n.trials+1), by=Part. ]
+# TRY WITH ADDING 0.5 TO HIT TOTAL AND DIVIDING BY N+1
+
+# keep one observation per subject
+first = data.frame(dt)[!duplicated(dt$Part.),]
+print(first)
+# not a single participant has a hit rate anywhere near reported 63%...
+# and the max and min are also different from those in T1
+
+# these "manually" computed numbers are close to the ones to follow in means_hits 
+#  which involve the Snodgrass calculation and exclusions,
+#  so I do not think the below code is the problem.
+
+
+##### DO THE MOST MARGINAL POSSIBLE ANALYSIS ##### 
+summary(d$Hit)
+# nowhere near the T1 values
+
+
+##### ATTEMPT TO DIRECTLY REPRODUCE SECOND SPREADSHEET ##### 
+# what is the Cond. variable?
+table(d$Cond.)
+# no idea
+```
+
+
+
+
+
+
+
+
 
 ## Step 3: Tidy data
 
@@ -121,12 +234,17 @@ d_dprime <- tidy_data %>%
   group_by(Task, InvCond, subID) %>%
   summarise(total_H = sum(accuracy=="Hit"), total_FA = sum(accuracy=="FalseAlarm"), total_CR = sum(accuracy=="CorrectRejection"), total_M = sum(accuracy=="Missed")) %>%
   mutate(total = 140) %>% #140 trials per block
-  mutate(H_rate = total_H/total, FA_rate = total_FA/total) %>% #calculate H and FA rates
+  
+  mutate(H_rate_raw = total_H/total, FA_rate_raw = total_FA/total ) %>% #calculate H and FA rates
+  mutate(H_rate = (total_H + 0.5)/(total + 1), FA_rate = (total_FA + 0.5)/(total + 1) ) %>% #calculate H and FA rates
+
   filter(H_rate > 0.02) %>% #remove participants who were unsuccessful at FFR task
-  mutate(H_rate_z = (H_rate - mean(H_rate))/sd(H_rate)) %>% #z-score H rate
-  mutate(FA_rate_z = (FA_rate - mean(FA_rate))/sd(FA_rate)) %>% #z-score FA rate
-  mutate(dprime = H_rate_z - FA_rate_z) %>% #calculate d' (TEST VERSION)
-  mutate(dprime = H_rate_z - FA_rate_z) %>% #calculate d' 
+  mutate(H_rate_z = -qnorm(H_rate) ) %>% #z-score H rate
+  mutate(FA_rate_z = -qnorm(FA_rate) ) %>% #z-score FA rate
+  # above are calculated per http://wise.cgu.edu/wise-tutorials/tutorial-signal-detection-theory/signal-detection-d-defined-2/
+  
+  # two-high-threshold model
+  mutate(dprime = FA_rate_z - H_rate_z) %>% #calculate d'
   group_by(subID, Task, InvCond)
 
 d_inv <- d_dprime %>%
@@ -136,11 +254,29 @@ d_inv <- d_dprime %>%
   mutate(inv_eff = (Upright - Inverted)/Upright) #effect of inversion on accuracy
 ```
 
+
 ### Descriptive statistics
 
 The mean and standard deviations of d' and of effect of inversion were calculated.
 
 ```{r}
+# corrected hit rates
+means_hits = d_dprime %>%
+  group_by(Task, InvCond) %>%
+  summarise(mean_hits = mean(H_rate, na.rm=TRUE), sd_dprime = sd(H_rate, na.rm=TRUE))
+
+print(means_hits)
+
+# uncorrected hit rates
+means_hits_raw = d_dprime %>%
+  group_by(Task, InvCond) %>%
+  summarise(mean_hits = mean(H_rate_raw, na.rm=TRUE), sd_dprime = sd(H_rate_raw, na.rm=TRUE))
+# very similar, as expected
+
+print(means_hits_raw)
+
+# neither of the above matches Table 1 hit rates in original paper
+
 means_d_dprime <- d_dprime %>%
   group_by(Task, InvCond) %>%
   summarise(mean_dprime = mean(dprime,na.rm=TRUE), sd_dprime = sd(dprime, na.rm=TRUE))
