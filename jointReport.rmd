@@ -206,13 +206,37 @@ dim(dt2)
 
 ##### D-Prime By Subject #####
 # Z-score, unpooled
-# these are supposed to use Snodgrass correction
+# passed arguments should already have Snodgrass correction
 dprime = function(f, h){
   return( -qnorm(f) + qnorm(h) )
 }
 
+# ref: https://cogsci.stackexchange.com/questions/6302/two-different-values-for-criterion-in-signal-detection-theory
+cbias = function( f, h ){
+  return( -0.5 * ( qnorm(f) + qnorm(h) ) )
+}
+
 dt2[, d := dprime( f=fa.rate.c, h=hit.rate.c ) ]
 # these also match! :D
+
+##### Response Bias (C) By Subject #####
+dt2[, C := cbias( f=fa.rate.c, h=hit.rate.c ) ]
+# these also match! :D
+
+##### "Success" By Subject #####
+# not sure, but I assume they use the uncorrected hit and fa rates here
+# pass the raw numbers of FAs, hits, and denominators for each
+# return binary result of 2-sided, 2-sample Z-test
+succeeded = function( f.count, h.count, nf, nh ){
+  return( prop.test( x=c(f.count, h.count), n=c(nf, nh) )$p.value < 0.05 )
+}
+dt2[, success := succeeded( f.count=n.fa, h.count=n.hits, nf=n.distr, nh=n.targets) ]
+
+# look at success by condiiton
+aggregate( success ~ Task + InvCond, dt2, mean)
+# no one appears to have failed anything
+# we were supposed to get 3 exclusions in the upright FFR category
+# ~~~~~~~PROBLEM
 
 ```
 
@@ -222,7 +246,10 @@ dt2[, d := dprime( f=fa.rate.c, h=hit.rate.c ) ]
 The mean and standard deviations of d' and of effect of inversion were calculated.
 
 ```{r}
+# means by condition
+t1 = aggregate( d ~ Task + InvCond, dt2, mean)
 
+t2 = aggregate( d ~ Task + InvCond, dt2, sd)
 ```
 
 MAJOR NUMERICAL ERROR: These descriptive statistics do not corroborate the reported descriptive statistics: ![Besson et al. Descriptive Statistics](originalDescriptiveStats.png) (Besson et al., p. 37)
@@ -271,9 +298,14 @@ We ran two-way repeated measures ANOVA on accuracy (d') with task type and orien
 We also ran an ANOVA on % accuracy change with face orientation with task type as a factor.
 
 ```{r}
-dprime.aov <- with(d_dprime,
-                   aov(dprime ~ (Task * InvCond) +
-                       Error(subID / (Task * InvCond))))
+aov( d ~ (Task * InvCond) + Error(subID / (Task * InvCond)), data=dt2 )
+```
+
+
+```{r}
+dprime.aov = aov( dprime ~ (Task * InvCond) + Error(subID / (Task * InvCond) ), data=data.frame(dt2) )
+
+
 summary(dprime.aov)
 # #Problem: nesting appeared unbalanaced due to some missing data from FFR Inverted, so I tried it as a linear mixed model:
 # res2 = lmer(dprime ~ Task * InvCond + (1|subID), data=d_dprime)
@@ -284,8 +316,8 @@ dinv.aov <- with(d_inv,
                  aov(inv_eff ~ Task + Error (subID/Task)))
 summary(dinv.aov)
 
-ggplot(data=d_dprime,
-  aes(x = InvCond, y = dprime, color = Task)) +
+ggplot(data=dt2,
+  aes(x = InvCond, y = d, color = Task)) +
   geom_boxplot(notch=TRUE) +
   geom_point(shape=21, position=position_dodge(width=0.75)) +
   ggthemes::theme_few() +
