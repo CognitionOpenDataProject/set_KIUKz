@@ -117,62 +117,6 @@ Conclusion: d-prime calculation is unlikely to be the problem. They used the Sno
 Under "Descriptive Statistics", I added some code that shows that the hit rates themselves are way off. 
 
 
-### Figure out what is wrong with hit rates
-```{r}
-##### MANUALLY ATTEMPT TO REPRODUCE SINGLE CELL IN TABLE 1 ##### 
-# for debugging purposes, focus only on first hit rate in Table 1
-# reported: 63% for upright FFR
-temp = d[ d$Task=="FFR" & d$InvCond==0, ]
-#temp = d[ d$Cond.==1, ]
-#temp = d[ d$Task=="FFR" & d$InvCond==1, ]
-
-length(unique(temp$Part.))  # n=28
-
-# marginal mean hit rate
-mean(temp$Hit, na.rm=TRUE)
-# this is already very wrong: 0.29 vs. 0.63 reported
-
-# look at hit rates on this task by subject
-# first raw hit rate
-library(data.table)
-dt = data.table(temp)
-dt[, prop.hit := mean( Hit, na.rm=TRUE ), by=Part. ]
-
-# now with Snodgrass correction
-dt[, n.trials := .N, by=Part. ]
-dt[, hit.sum := sum(Hit), by=Part. ]
-dt[, prop.hit.C := (hit.sum+0.5)/(n.trials+1), by=Part. ]
-# TRY WITH ADDING 0.5 TO HIT TOTAL AND DIVIDING BY N+1
-
-# keep one observation per subject
-first = data.frame(dt)[!duplicated(dt$Part.),]
-print(first)
-# not a single participant has a hit rate anywhere near reported 63%...
-# and the max and min are also different from those in T1
-
-# these "manually" computed numbers are close to the ones to follow in means_hits 
-#  which involve the Snodgrass calculation and exclusions,
-#  so I do not think the below code is the problem.
-
-
-##### DO THE MOST MARGINAL POSSIBLE ANALYSIS ##### 
-summary(d$Hit)
-# nowhere near the T1 values
-
-
-##### ATTEMPT TO DIRECTLY REPRODUCE SECOND SPREADSHEET ##### 
-# what is the Cond. variable?
-table(d$Cond.)
-# no idea
-```
-
-
-
-
-
-
-
-
 
 ## Step 3: Tidy data
 
@@ -210,7 +154,6 @@ tidy_data <- tidy_data %>%
   select (-Hit, -FA, -CR, -Missed, -Hits.RT, -FAs.RT) %>%
   # cast the string variables as factors
   transform(Task = factor(Task), InvCond = factor(InvCond), subID = factor(subID))
-
 ```
 
 ## Step 4: Run analysis
@@ -230,28 +173,47 @@ The effect of inversion was computed by calculating the difference between inver
 In the upright condition, three participants did not succeed on the Familiar Face Recognition task (hit rate = 0) and were thus discarded from the study.
 
 ```{r}
-d_dprime <- tidy_data %>%
-  group_by(Task, InvCond, subID) %>%
-  summarise(total_H = sum(accuracy=="Hit"), total_FA = sum(accuracy=="FalseAlarm"), total_CR = sum(accuracy=="CorrectRejection"), total_M = sum(accuracy=="Missed")) %>%
-  mutate(total = 140) %>% #140 trials per block
-  
-  mutate(H_rate_raw = total_H/total, FA_rate_raw = total_FA/total ) %>% #calculate H and FA rates
-  mutate(H_rate = (total_H + 0.5)/(total + 1), FA_rate = (total_FA + 0.5)/(total + 1) ) %>% #calculate H and FA rates
+library(data.table)
+dt = data.table(tidy_data)
 
-  filter(H_rate > 0.02) %>% #remove participants who were unsuccessful at FFR task
-  mutate(H_rate_z = -qnorm(H_rate) ) %>% #z-score H rate
-  mutate(FA_rate_z = -qnorm(FA_rate) ) %>% #z-score FA rate
-  # above are calculated per http://wise.cgu.edu/wise-tutorials/tutorial-signal-detection-theory/signal-detection-d-defined-2/
-  
-  # two-high-threshold model
-  mutate(dprime = FA_rate_z - H_rate_z) %>% #calculate d'
-  group_by(subID, Task, InvCond)
+##### Subject-Specific Hit And FA Rates #####
+dt[, n.targets := sum( ExpectedResp, na.rm=TRUE ), by=list( subID, Task, InvCond ) ]
+dt[, n.hits := sum( accuracy=="Hit" ), by=list( subID, Task, InvCond ) ]
+dt[, hit.rate := n.hits/n.targets, by=list( subID, Task, InvCond ) ]
+# this matches author's calculation of 50/70 for first cell and subject 1
 
-d_inv <- d_dprime %>%
-  group_by(Task, subID, InvCond) %>%
-  summarise(mean_dprime = mean(dprime)) %>%
-  spread(InvCond,mean_dprime) %>%
-  mutate(inv_eff = (Upright - Inverted)/Upright) #effect of inversion on accuracy
+# false-alarm rates
+dt[, n.distr := sum( ExpectedResp==0, na.rm=TRUE ), by=list( subID, Task, InvCond ) ]
+dt[, n.fa := sum( accuracy=="FalseAlarm" ), by=list( subID, Task, InvCond ) ]
+dt[, fa.rate := n.fa/n.distr, by=list( subID, Task, InvCond ) ]
+
+# Snodgrass versions for later calculation of d'
+dt[, hit.rate.c := (n.hits+0.5)/(n.targets+1), by=list( subID, Task, InvCond ) ]
+dt[, fa.rate.c := (n.fa+0.5)/(n.distr+1), by=list( subID, Task, InvCond ) ]
+
+
+
+##### Average Hit Rates By Task and Inversion #####
+
+# keep only 1 row per subject, 1 for each task
+# hackily make a variable that's unique for each of those combos
+dt$temp = paste( dt$subID, dt$Task, dt$InvCond )
+dt2 = dt[ !duplicated(dt$temp), ]
+dim(dt2)
+# indeed, this has 27*2*3 rows
+# these hit and FA rates match the originals :) 
+
+
+##### D-Prime By Subject #####
+# Z-score, unpooled
+# these are supposed to use Snodgrass correction
+dprime = function(f, h){
+  return( -qnorm(f) + qnorm(h) )
+}
+
+dt2[, d := dprime( f=fa.rate.c, h=hit.rate.c ) ]
+# these also match! :D
+
 ```
 
 
@@ -260,34 +222,7 @@ d_inv <- d_dprime %>%
 The mean and standard deviations of d' and of effect of inversion were calculated.
 
 ```{r}
-# corrected hit rates
-means_hits = d_dprime %>%
-  group_by(Task, InvCond) %>%
-  summarise(mean_hits = mean(H_rate, na.rm=TRUE), sd_dprime = sd(H_rate, na.rm=TRUE))
 
-print(means_hits)
-
-# uncorrected hit rates
-means_hits_raw = d_dprime %>%
-  group_by(Task, InvCond) %>%
-  summarise(mean_hits = mean(H_rate_raw, na.rm=TRUE), sd_dprime = sd(H_rate_raw, na.rm=TRUE))
-# very similar, as expected
-
-print(means_hits_raw)
-
-# neither of the above matches Table 1 hit rates in original paper
-
-means_d_dprime <- d_dprime %>%
-  group_by(Task, InvCond) %>%
-  summarise(mean_dprime = mean(dprime,na.rm=TRUE), sd_dprime = sd(dprime, na.rm=TRUE))
-
-print(means_d_dprime)
-
-means_d_inv <- d_inv %>%
-  group_by(Task) %>%
-  summarise(mean_inveff = mean(inv_eff,na.rm=TRUE), sd_inveff = sd(inv_eff, na.rm=TRUE))
-
-print(means_d_inv)
 ```
 
 MAJOR NUMERICAL ERROR: These descriptive statistics do not corroborate the reported descriptive statistics: ![Besson et al. Descriptive Statistics](originalDescriptiveStats.png) (Besson et al., p. 37)
