@@ -1,0 +1,338 @@
+---
+title: "COD Reproducibility Report"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+#### Article ID: KIUKz
+#### Pilot: Maia ten Brink
+#### Co-Pilot: Maya Mathur
+#### Start date: 03/25/17
+#### End date: 03/27/2017 
+
+-------
+
+
+#### Methods summary: 
+
+Participants completed three tasks: 1) a Familiar Face Recognition Task (FFR) in which famous faces were presented as targets and unknown faces as distractors; 2) a Human Face Categorization Task (HFC) in which human faces were presented as targets and animal faces as distractors; and 3) an Individual Face Recognition Task (IFR) in which different pictures of a single famous individual were presented as targets and unknown faces as distractors. 
+Each task consisted of a block of 140 stimuli presented upright, and a second block of 140 stimuli presented in an inverted orientation. No stimuli were repeated.
+
+To assess recognition, each block involved a Speed and Accuracy Boosting (SAB) procedure to force participants to use their fastest strategy and boost accuracy. This involved a Go/No-Go type paradigm in which participants had to respond whether they recognized the stimulus as the target before 600 ms, but had to inhibit response if the stimulus was not the target. If participants responded before the response deadline, they received positive audio feedback indicating whether it was a hit (correct: target) or negative audio feedback indicating a false alarm (incorrect: distractor). If they did not respond before the 600 ms deadline, they received positive audio feedback if the item was a distractor (correct rejection) or target (miss). Prior to each task, participants trained on a block of 20 targets and 20 distractors.
+
+------
+
+#### Target outcomes: 
+
+Findings reported in section 3.1: Across-participants accuracy. 
+> "A repeated measures two-way ANOVA on accuracy with task and orientation as factors revealed a clear main effect of the task (F(2, 22) = 784.6; p < 0.0005) and of the orientation (F(1, 23) = 402.3; p < 0.0005), as well as a significant interaction between them (F(2, 22) = 60.2; p < 0.0005). Accuracy was smaller in the Familiar Face Recognition condition than in the Individual Face Recognition, which itself was smaller than in the Human Face Categorization. The Familiar Face Recognition was much more difficult than the Individual Face Recognition and Human Face Categorization and not every participant succeeded on the task. In the upright condition, three participants did not succeed on the Familiar Face Recognition and were thus discarded from the study, while in the inverted condition only a few succeeded at this condition. Furthermore, the effect of inversion was computed (i.e. the difference between inverted face accuracy and upright faces accuracy divided by the upright faces accuracy; e.g. Russell, Duchaine, & Nakayama, 2009) and showed a significant difference between the three task (F(2, 22) = 151.4; p < 0.0005). Post-hoc analyses showed that this effect was larger in the Familiar Face Recognition than in the Individual Face Recognition (Familiar Face Recognition: 88.1%, SD = 29.6%; Individual Face Recognition: 44.5%, SD = 9.9%; p < 0.0005), which itself was larger than in the Human Face Categorization (8.1%, SD = 10.7%; p < 0.0005)." (Besson et al., p. 37).
+
+------
+
+```{r global_options, include=FALSE}
+require(knitr)
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+## Step 1: Load packages
+
+```{r}
+library(tidyverse) # for data munging
+library(tidyr)
+library(dplyr) # for working with dataframes
+library(tibble)
+library(knitr) # for kable table formating
+library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
+library(readxl) # import excel files
+library(CODreports) # custom report functions
+library(ggthemes)
+library(lme4)
+library(lmerTest)
+```
+
+## Step 2: Load data
+
+```{r}
+setwd("~/Dropbox/Personal computer/Independent studies/Mike's Cognition project on data sharing policy/Co-piloting/Copilot #1/set_KIUKz")
+raw_data = read_excel("data.xlsx")
+
+# check number of subjects
+dim( unique(raw_data[,1]) )
+# 28 vs. 27 in paper (due to later exclusion)
+```
+
+
+## Step 3: Tidy data
+
+```{r}
+tidy_data <- raw_data %>%
+  select(-Columns, -Notes,-StimuliSet) %>%  # remove some variables
+  transform(InvCond = factor(InvCond, labels=c("Upright","Inverted"))) %>%
+  rename(trial = Trial., subID = Part., cond = Cond., task_num = Task., lat = Lat.) %>%
+  filter(is.na(Stimuli)==FALSE) %>%   #remove missing trials
+  mutate(accuracy = NA)  # initialize empty accuracy variable
+
+# sanity check: are accuracy components are mutually exclusive in original data?
+d = data.frame(raw_data)
+table(d$Hit, d$FA, d$CR, d$Missed)
+# yes
+
+# make accuracy variable: each trial can be a hit, FA, CR, or miss
+for (p in 1:dim(tidy_data)[1]) {
+  if (tidy_data$Hit[p] == 1) {
+    tidy_data$accuracy[p] = "Hit"
+  }
+  if (tidy_data$FA[p] == 1) {
+    tidy_data$accuracy[p] = "FalseAlarm"
+  }
+  if (tidy_data$CR[p] == 1) {
+    tidy_data$accuracy[p] = "CorrectRejection"
+  }
+  if (tidy_data$Missed[p] == 1) {
+    tidy_data$accuracy[p] = "Missed"
+  }
+}  
+
+tidy_data <- tidy_data %>%
+  # remove some variables
+  select (-Hit, -FA, -CR, -Missed, -Hits.RT, -FAs.RT) %>%
+  # cast the string variables as factors
+  transform(Task = factor(Task), InvCond = factor(InvCond), subID = factor(subID))
+```
+
+## Step 4: Run analysis
+
+### Pre-processing
+
+Discrimination index (d'), i.e. accuracy, was calculated according to ![Snodgrass & Corwin (1988)] (http://wixtedlab.ucsd.edu/publications/Psych%20218/Snodgrass_Corwin_1988.pdf) (Besson et al., p. 36). 
+
+Discrimination index:
+$$d' = z_H - z_F$$
+
+where $z_F$ = z-score of false alarm rate and $z_H$ is the z-score of hit rate
+
+The effect of inversion was computed by calculating the difference between inverted face accuracy and upright faces accuracy divided by the upright faces accuracy.
+
+In the upright condition, three participants did not succeed on the Familiar Face Recognition task (hit rate = 0) and were thus discarded from the study.
+
+```{r}
+library(data.table)
+dt = data.table(tidy_data)
+
+##### Subject-Specific Hit And FA Rates #####
+dt[, n.targets := sum( ExpectedResp, na.rm=TRUE ), by=list( subID, Task, InvCond ) ]
+dt[, n.hits := sum( accuracy=="Hit" ), by=list( subID, Task, InvCond ) ]
+dt[, hit.rate := n.hits/n.targets, by=list( subID, Task, InvCond ) ]
+# this matches author's calculation of 50/70 for first cell and subject 1
+
+# false-alarm rates
+dt[, n.distr := sum( ExpectedResp==0, na.rm=TRUE ), by=list( subID, Task, InvCond ) ]
+dt[, n.fa := sum( accuracy=="FalseAlarm" ), by=list( subID, Task, InvCond ) ]
+dt[, fa.rate := n.fa/n.distr, by=list( subID, Task, InvCond ) ]
+
+# Snodgrass versions for later calculation of d'
+dt[, hit.rate.c := (n.hits+0.5)/(n.targets+1), by=list( subID, Task, InvCond ) ]
+dt[, fa.rate.c := (n.fa+0.5)/(n.distr+1), by=list( subID, Task, InvCond ) ]
+
+
+
+
+##### Average Hit Rates By Task and Inversion #####
+
+# dt2: keep only 1 row per subject, 1 for each task and inversion combination
+# hackily make a variable that's unique for each of those combos
+dt$temp = paste( dt$subID, dt$Task, dt$InvCond )
+dt2 = dt[ !duplicated(dt$temp), ]
+dim(dt2)
+# indeed, this has 27*2*3 rows
+# these hit and FA rates match the originals :) 
+
+
+##### D-Prime By Subject #####
+# Z-score, unpooled
+# passed arguments should already have Snodgrass correction
+dprime = function(f, h){
+  return( -qnorm(f) + qnorm(h) )
+}
+
+# ref: https://cogsci.stackexchange.com/questions/6302/two-different-values-for-criterion-in-signal-detection-theory
+cbias = function( f, h ){
+  return( -0.5 * ( qnorm(f) + qnorm(h) ) )
+}
+
+dt2[, d := dprime( f=fa.rate.c, h=hit.rate.c ) ]
+# these also match! :D
+
+
+##### Response Bias (C) By Subject #####
+dt2[, C := cbias( f=fa.rate.c, h=hit.rate.c ) ]
+# these also match! :D
+
+
+##### "Success" By Subject #####
+# not sure, but I assume they use the uncorrected hit and fa rates here
+# pass the raw numbers of FAs, hits, and denominators for each
+# return binary result of 2-sided, 2-sample Z-test
+succeeded = Vectorize( function( f.count, h.count, nf, nh ){
+  return( prop.test( x=c(f.count, h.count), n=c(nf, nh) )$p.value < 0.05 )
+}, vectorize.args=c("f.count", "h.count", "nf", "nh") )
+
+dt2$success = succeeded( f.count=dt2$n.fa, h.count=dt2$n.hits, nf=dt2$n.distr, nh=dt2$n.targets )
+
+# look at success by condiiton
+aggregate( success ~ Task + InvCond, dt2, sum)
+# indeed, 3 subjects failed
+
+# subjects to exclude
+excl.ids = dt2[ dt2$Task=="FFR" & dt2$InvCond=="Upright" & dt2$success==0,]$subID
+
+# exclude them
+dt2 = dt2[ !dt2$subID %in% excl.ids, ]
+
+
+##### Accuracy as Percent #####
+d3 = data.frame(dt2)
+d3 = d3[ , names(d3) %in% c("subID", "InvCond", "Task", "d") ]
+
+
+d_inv <- d3 %>%
+  group_by(Task, subID, InvCond) %>%
+  spread(InvCond, d) %>%
+  mutate(inv.eff = (Upright - Inverted)/Upright) #effect of inversion on accuracy
+
+# sanity check: compare to Fig 2B
+aggregate( inv.eff ~ Task, data = d_inv, median )
+
+```
+
+
+### Descriptive statistics
+
+The mean and standard deviations of d' and of effect of inversion were calculated.
+
+```{r}
+# means and sds by condition
+aggregate( d ~ Task + InvCond, dt2, mean)
+aggregate( d ~ Task + InvCond, dt2, sd)
+```
+
+These descriptive statistics match the reported descriptive statistics: ![Besson et al. Descriptive Statistics](originalDescriptiveStats.png) (Besson et al., p. 37)
+
+```{r}
+###FFR
+##Upright
+#mean:
+compareValues(reportedValue = 1.06, obtainedValue = 1.06)
+#stdev:
+compareValues(reportedValue = 0.41, obtainedValue = 0.41)
+##Inverted
+#mean:
+compareValues(reportedValue = .13, obtainedValue = 0.13)
+#stdev:
+compareValues(reportedValue = .28, obtainedValue = 0.28)
+
+###HFC
+##Upright
+#mean:
+compareValues(reportedValue = 4.20, obtainedValue = 4.20)
+#stdev:
+compareValues(reportedValue = 0.52, obtainedValue = 0.52)
+##Inverted
+#mean:
+compareValues(reportedValue = 3.85, obtainedValue = 3.85)
+#stdev:
+compareValues(reportedValue = 0.56, obtainedValue = 0.56)
+
+###IFR
+##Upright
+#mean:
+compareValues(reportedValue = 3.96, obtainedValue = 3.96)
+#stdev:
+compareValues(reportedValue = 0.47, obtainedValue = 0.47)
+##Inverted
+#mean:
+compareValues(reportedValue = 2.18, obtainedValue = 2.18)
+#stdev:
+compareValues(reportedValue = 0.37, obtainedValue = 0.37)
+```
+
+### Inferential statistics
+
+We ran two-way repeated measures ANOVA on accuracy (d') with task type and orientation as factors. (Because there was an imbalance in the orientation cells, we followed up with our own analysis, a linear mixed model.)
+We also ran an ANOVA on % accuracy change with face orientation with task type as a factor.
+
+```{r}
+# https://www.r-bloggers.com/two-way-anova-with-repeated-measures/
+
+# very helpful:
+# https://stats.stackexchange.com/questions/14088/why-do-lme-and-aov-return-different-results-for-repeated-measures-anova-in-r
+m1 = aov( d ~ (Task * InvCond) + Error(subID / (Task * InvCond)), data=dt2 )
+summary(m1)
+
+# compare values
+compareValues(reportedValue=797.3, obtainedValue=784.6)
+compareValues(reportedValue=399.4, obtainedValue=402.3)
+compareValues(reportedValue=50.91, obtainedValue=60.2)
+
+# Problem: nesting appeared unbalanaced due to some missing data from FFR Inverted, so I tried it as a linear mixed model:
+library(lme4)
+res2 = lmer(d ~ Task * InvCond + (1|subID), data=dt2)
+summary(res2)
+# everything is highly significant with effects in the desired directions
+```
+
+
+Normed effect of inversion
+```{r}
+dinv.aov <- with( d_inv,
+                 aov(inv.eff ~ Task + Error(subID/Task) ) )
+summary(dinv.aov)
+
+compareValues(reportedValue = 151.4, obtainedValue = 109.8)
+```
+
+
+
+```{r}
+ggplot(data=dt2,
+  aes(x = InvCond, y = d, color = Task)) +
+  geom_boxplot(notch=TRUE) +
+  geom_point(shape=21, position=position_dodge(width=0.75)) +
+  ggthemes::theme_few() +
+  xlab("Position") +
+  ylab("Accuracy (d')")
+
+ggplot(data=d_inv,
+  aes(x = Task, y = inv.eff, color = Task))+
+  geom_boxplot(notch=TRUE) +
+  geom_point(shape=21, position=position_dodge(width=0.75)) +
+  ggthemes::theme_few() +
+  xlab("Task Condition") +
+  ylab("% Accuracy on Inverted Faces")
+
+```
+
+
+
+## Step 5: Conclusion
+
+```{r}
+codReport(Report_Type = 'joint',
+          Article_ID = 'KIUKz', 
+          Insufficient_Information_Errors = 0,
+          Decision_Errors = 0, 
+          Major_Numerical_Errors = 2, 
+          Minor_Numerical_Errors = 2)
+```
+
+This reproducibility check was a partial success. 
+
+I initially could not reproduce the by-participant dataset from the by-trial data, but after contacting the author and receiving a prompt reply, I could exactly reproduce the by-participant dataset and corresponding descriptive statistics. The procedures I had done incorrectly were perhaps not entirely detailed in the paper, but I suspect that a reader with background in signal detection theory would have understood these procedures as standard practice. 
+
+Results of the two main analyses and corresponding marginal means yielded effect sizes similar to those in the original paper, but that differed numerically. F-statistics were sometimes substantially different, although direct comparison is difficult because our analyses also differed on degrees of freedom. 
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
