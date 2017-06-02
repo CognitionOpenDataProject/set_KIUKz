@@ -60,62 +60,8 @@ raw_data = read_excel("data.xlsx")
 
 # check number of subjects
 dim( unique(raw_data[,1]) )
-# 28 vs. 27 in paper
+# 28 vs. 27 in paper (due to later exclusion)
 ```
-
-
-
-
-## Copilot explores
-
-### MM's notes to self
-
-Currently calcuating H and FA using Snodgrass correction, then using difference of z-scores (per the below tutorial and Snodgrass' two-high-threshold model) for d'. However, even the hit rates themselves (both raw and uncorrected) don't match those in the paper. 
-
-SDT reference (computation of z-scores):
-http://wise.cgu.edu/wise-tutorials/tutorial-signal-detection-theory/signal-detection-d-defined-2/
-
-
-
-### Try to understand d-prime
-```{r}
-# MM experiments
-# two high-threshold version
-dprime1 = function(f, h){
-  if (f > h) stop("use other equation")
-  return( 0.5 + ( (h-f)*(1+h-f) ) / ( 4*h*(1-f) ) )
-}
-
-# logistic version
-dprime2 = function(f, h){
-  return( log( ( h*(1-f) ) / ( f*(1-h) ) ) )
-}
-
-# Z-score, unpooled
-# THIS SEEMS TO BE WHAT THEY USE IN THE TABLE
-dprime3 = function(f, h){
-  return( -qnorm(f) + qnorm(h) )
-}
-
-# see if we can recover the d' in table from the table's own hit rates
-dprime1(.25, .63)
-dprime2(.25, .63)
-dprime3(.25, .63)
-
-# below is close, probably within rounding error
-# since table only has a 
-dprime3(.25, .63)
-dprime3(.41, .45)
-dprime3(.04, .99)
-
-# how many trials are there?
-d = data.frame(raw_data)
-table(d$Task)
-```
-Conclusion: d-prime calculation is unlikely to be the problem. They used the Snodgrass correction, as stated in paper, which pilot did not use. More importantly, the pilot computed the z-scores wrong. Authors did not exactly specify what version of d' they used, but their apparent choice (based on the above) is definitely the most common.
-
-Under "Descriptive Statistics", I added some code that shows that the hit rates themselves are way off. 
-
 
 
 ## Step 3: Tidy data
@@ -128,7 +74,7 @@ tidy_data <- raw_data %>%
   filter(is.na(Stimuli)==FALSE) %>%   #remove missing trials
   mutate(accuracy = NA)  # initialize empty accuracy variable
 
-# MM: check whether accuracy components are mutually exclusive in original data
+# sanity check: are accuracy components are mutually exclusive in original data?
 d = data.frame(raw_data)
 table(d$Hit, d$FA, d$CR, d$Missed)
 # yes
@@ -161,7 +107,6 @@ tidy_data <- tidy_data %>%
 ### Pre-processing
 
 Discrimination index (d'), i.e. accuracy, was calculated according to ![Snodgrass & Corwin (1988)] (http://wixtedlab.ucsd.edu/publications/Psych%20218/Snodgrass_Corwin_1988.pdf) (Besson et al., p. 36). 
-INSUFFICIENT INFORMATION ERROR: This equation had to be found in the cited Snodgrass paper; it was not detailed anywhere within this paper. 
 
 Discrimination index:
 $$d' = z_H - z_F$$
@@ -193,9 +138,10 @@ dt[, fa.rate.c := (n.fa+0.5)/(n.distr+1), by=list( subID, Task, InvCond ) ]
 
 
 
+
 ##### Average Hit Rates By Task and Inversion #####
 
-# keep only 1 row per subject, 1 for each task
+# dt2: keep only 1 row per subject, 1 for each task and inversion combination
 # hackily make a variable that's unique for each of those combos
 dt$temp = paste( dt$subID, dt$Task, dt$InvCond )
 dt2 = dt[ !duplicated(dt$temp), ]
@@ -219,24 +165,45 @@ cbias = function( f, h ){
 dt2[, d := dprime( f=fa.rate.c, h=hit.rate.c ) ]
 # these also match! :D
 
+
 ##### Response Bias (C) By Subject #####
 dt2[, C := cbias( f=fa.rate.c, h=hit.rate.c ) ]
 # these also match! :D
+
 
 ##### "Success" By Subject #####
 # not sure, but I assume they use the uncorrected hit and fa rates here
 # pass the raw numbers of FAs, hits, and denominators for each
 # return binary result of 2-sided, 2-sample Z-test
-succeeded = function( f.count, h.count, nf, nh ){
+succeeded = Vectorize( function( f.count, h.count, nf, nh ){
   return( prop.test( x=c(f.count, h.count), n=c(nf, nh) )$p.value < 0.05 )
-}
-dt2[, success := succeeded( f.count=n.fa, h.count=n.hits, nf=n.distr, nh=n.targets) ]
+}, vectorize.args=c("f.count", "h.count", "nf", "nh") )
+
+dt2$success = succeeded( f.count=dt2$n.fa, h.count=dt2$n.hits, nf=dt2$n.distr, nh=dt2$n.targets )
 
 # look at success by condiiton
-aggregate( success ~ Task + InvCond, dt2, mean)
-# no one appears to have failed anything
-# we were supposed to get 3 exclusions in the upright FFR category
-# ~~~~~~~PROBLEM
+aggregate( success ~ Task + InvCond, dt2, sum)
+# indeed, 3 subjects failed
+
+# subjects to exclude
+excl.ids = dt2[ dt2$Task=="FFR" & dt2$InvCond=="Upright" & dt2$success==0,]$subID
+
+# exclude them
+dt2 = dt2[ !dt2$subID %in% excl.ids, ]
+
+
+##### Accuracy as Percent #####
+d3 = data.frame(dt2)
+d3 = d3[ , names(d3) %in% c("subID", "InvCond", "Task", "d") ]
+
+
+d_inv <- d3 %>%
+  group_by(Task, subID, InvCond) %>%
+  spread(InvCond, d) %>%
+  mutate(inv.eff = (Upright - Inverted)/Upright) #effect of inversion on accuracy
+
+# sanity check: compare to Fig 2B
+aggregate( inv.eff ~ Task, data = d_inv, median )
 
 ```
 
@@ -246,50 +213,49 @@ aggregate( success ~ Task + InvCond, dt2, mean)
 The mean and standard deviations of d' and of effect of inversion were calculated.
 
 ```{r}
-# means by condition
-t1 = aggregate( d ~ Task + InvCond, dt2, mean)
-
-t2 = aggregate( d ~ Task + InvCond, dt2, sd)
+# means and sds by condition
+aggregate( d ~ Task + InvCond, dt2, mean)
+aggregate( d ~ Task + InvCond, dt2, sd)
 ```
 
-MAJOR NUMERICAL ERROR: These descriptive statistics do not corroborate the reported descriptive statistics: ![Besson et al. Descriptive Statistics](originalDescriptiveStats.png) (Besson et al., p. 37)
+These descriptive statistics match the reported descriptive statistics: ![Besson et al. Descriptive Statistics](originalDescriptiveStats.png) (Besson et al., p. 37)
 
 ```{r}
 ###FFR
 ##Upright
 #mean:
-compareValues(reportedValue = 1.06, obtainedValue = 3.048044e-16)
+compareValues(reportedValue = 1.06, obtainedValue = 1.06)
 #stdev:
-compareValues(reportedValue = 0.41, obtainedValue = 1.0036151)
+compareValues(reportedValue = 0.41, obtainedValue = 0.41)
 ##Inverted
 #mean:
-compareValues(reportedValue = .13, obtainedValue = -2.775558e-17)
+compareValues(reportedValue = .13, obtainedValue = 0.13)
 #stdev:
-compareValues(reportedValue = .28, obtainedValue = 0.5215429)
+compareValues(reportedValue = .28, obtainedValue = 0.28)
 
 ###HFC
 ##Upright
 #mean:
-compareValues(reportedValue = 4.20, obtainedValue = 2.386980e-15)
+compareValues(reportedValue = 4.20, obtainedValue = 4.20)
 #stdev:
-compareValues(reportedValue = 0.52, obtainedValue = 1.5092765)
+compareValues(reportedValue = 0.52, obtainedValue = 0.52)
 ##Inverted
 #mean:
-compareValues(reportedValue = 3.85, obtainedValue = 1.204071e-15)
+compareValues(reportedValue = 3.85, obtainedValue = 3.85)
 #stdev:
-compareValues(reportedValue = 0.56, obtainedValue = 1.6299561)
+compareValues(reportedValue = 0.56, obtainedValue = 0.56)
 
 ###IFR
 ##Upright
 #mean:
-compareValues(reportedValue = 3.96, obtainedValue = -2.269275e-16)
+compareValues(reportedValue = 3.96, obtainedValue = 3.96)
 #stdev:
-compareValues(reportedValue = 0.47, obtainedValue = 1.4212695)
+compareValues(reportedValue = 0.47, obtainedValue = 0.47)
 ##Inverted
 #mean:
-compareValues(reportedValue = 2.18, obtainedValue = -2.754918e-16)
+compareValues(reportedValue = 2.18, obtainedValue = 2.18)
 #stdev:
-compareValues(reportedValue = 0.37, obtainedValue = 1.3595276)
+compareValues(reportedValue = 0.37, obtainedValue = 0.37)
 ```
 
 ### Inferential statistics
@@ -298,24 +264,38 @@ We ran two-way repeated measures ANOVA on accuracy (d') with task type and orien
 We also ran an ANOVA on % accuracy change with face orientation with task type as a factor.
 
 ```{r}
-aov( d ~ (Task * InvCond) + Error(subID / (Task * InvCond)), data=dt2 )
+# https://www.r-bloggers.com/two-way-anova-with-repeated-measures/
+
+# very helpful:
+# https://stats.stackexchange.com/questions/14088/why-do-lme-and-aov-return-different-results-for-repeated-measures-anova-in-r
+m1 = aov( d ~ (Task * InvCond) + Error(subID / (Task * InvCond)), data=dt2 )
+summary(m1)
+
+# compare values
+compareValues(reportedValue=797.3, obtainedValue=784.6)
+compareValues(reportedValue=399.4, obtainedValue=402.3)
+compareValues(reportedValue=50.91, obtainedValue=60.2)
+
+# Problem: nesting appeared unbalanaced due to some missing data from FFR Inverted, so I tried it as a linear mixed model:
+library(lme4)
+res2 = lmer(d ~ Task * InvCond + (1|subID), data=dt2)
+summary(res2)
+# everything is highly significant with effects in the desired directions
 ```
 
 
+Normed effect of inversion
 ```{r}
-dprime.aov = aov( dprime ~ (Task * InvCond) + Error(subID / (Task * InvCond) ), data=data.frame(dt2) )
-
-
-summary(dprime.aov)
-# #Problem: nesting appeared unbalanaced due to some missing data from FFR Inverted, so I tried it as a linear mixed model:
-# res2 = lmer(dprime ~ Task * InvCond + (1|subID), data=d_dprime)
-# summary(res2)
-# #result: No significant main or interaction fixed effects
-
-dinv.aov <- with(d_inv,
-                 aov(inv_eff ~ Task + Error (subID/Task)))
+dinv.aov <- with( d_inv,
+                 aov(inv.eff ~ Task + Error(subID/Task) ) )
 summary(dinv.aov)
 
+compareValues(reportedValue = 151.4, obtainedValue = 109.8)
+```
+
+
+
+```{r}
 ggplot(data=dt2,
   aes(x = InvCond, y = d, color = Task)) +
   geom_boxplot(notch=TRUE) +
@@ -325,7 +305,7 @@ ggplot(data=dt2,
   ylab("Accuracy (d')")
 
 ggplot(data=d_inv,
-  aes(x = Task, y = inv_eff, color = Task))+
+  aes(x = Task, y = inv.eff, color = Task))+
   geom_boxplot(notch=TRUE) +
   geom_point(shape=21, position=position_dodge(width=0.75)) +
   ggthemes::theme_few() +
@@ -334,45 +314,24 @@ ggplot(data=d_inv,
 
 ```
 
-There was no significant main effect of either task (F(2,51) = 1.142, p = 0.29), a marginally significant effect of presentation orientation (F(1,25) = 4.076, p = 0.054), and no significant interaction between task and orientation (F(2,49) = 0.283, p = 0.755).
-In the original study, however, 
->"a repeated measures two-way ANOVA on accuracy with task and orientation as factors revealed a clear main effect of the task (F(2, 22) = 784.6; p < 0.0005) and of the orientation (F(1, 23) = 402.3; p < 0.0005), as well as a significant interaction between them (F(2, 22) = 60.2; p < 0.0005). Accuracy was smaller in the Familiar Face Recognition condition than in the Individual Face Recognition, which itself was smaller than in the Human Face Categorization. The Familiar Face Recognition was much more difficult than the Individual Face Recognition and Human Face Categorization and not every participant succeeded on the task."
 
-```{r}
-compareValues(reportedValue = 0.0005, obtainedValue = 0.29, isP= T)
-compareValues(reportedValue = 0.0005, obtainedValue = 0.054, isP = T)
-compareValues(reportedValue = 0.0005, obtainedValue = 0.755, isP = T)
-```
-
-There was no significant difference in the effects of face inversion across the three tasks (F(2,49) = 0.496, p = 0.61), contrary to the original paper's findings, which
->"showed a significant difference between the three task (F(2, 22) = 151.4; p < 0.0005). Post-hoc analyses showed that this effect was larger in the Familiar Face Recognition than in the Individual Face Recognition (Familiar Face Recognition: 88.1%, SD = 29.6%; Individual Face Recognition: 44.5%, SD = 9.9%; p < 0.0005), which itself was larger than in the Human Face Categorization (8.1%, SD = 10.7%; p < 0.0005."
-The range of affects of inversion on accuracy seemed to match the original paper somewhat, with the largest spread of values for percent accuracy of inversion in the Familiar Face Recognition Task.
-
-```{r}
-compareValues(reportedValue = 0.0005, obtainedValue = 0.61, isP= T)
-```
 
 ## Step 5: Conclusion
 
 ```{r}
-codReport(Report_Type = 'pilot',
+codReport(Report_Type = 'copilot',
           Article_ID = 'KIUKz', 
-          Insufficient_Information_Errors = 1,
-          Decision_Errors = 4, 
-          Major_Numerical_Errors = 16, 
-          Minor_Numerical_Errors = 0)
+          Insufficient_Information_Errors = 0,
+          Decision_Errors = 0, 
+          Major_Numerical_Errors = 2, 
+          Minor_Numerical_Errors = 2)
 ```
 
-This reproducibility check was a failure. 
-There was insufficient information to complete the analysis.
-None of the effects or significance findings from the accuracy analysis detailed in Section 3.1 were reproduced in our analysis.
-Some trends appeared to be reproduced: The range of affects of inversion on accuracy seemed to match the original paper somewhat, with the largest spread of values for percent accuracy of inversion in the Familiar Face Recognition Task.
+This reproducibility check was a partial success. 
 
-One possible explanation is that d' may have been calculated differently in the original analysis from our replication. A reference was provided, but no actual equation for d' was specified. They may not have centered their hit and false alarm rates, or they may have calculated hit rates and false alarms rates by including correct rejections and misses (the method to calculate hit and false alarm rate was not clarified in the write-up).
+I initially could not reproduce the by-participant dataset from the by-trial data, but after contacting the author and receiving a prompt reply, I could exactly reproduce the by-participant dataset and corresponding descriptive statistics. The procedures I had done incorrectly were perhaps not entirely detailed in the paper, but I suspect that a reader with background in signal detection theory would have understood these procedures as standard practice. 
 
-Our figures do not reproduce the original paper's figures, and our calculated degrees of freedom for the ANOVAs were larger than the originals. This may be due to authors' unspecified exclusion of outliers.
-
-It is my sense, however, that I have failed to appropriately reproduce their analysis in some way because of my own confusion about how to carry out their analytical method because of INCOMPLETE INFORMATION ERROR, rather than missing or excluded data.
+Results of the two main analyses and corresponding marginal means yielded effect sizes similar to those in the original paper, but that differed numerically. F-statistics were sometimes substantially different, although direct comparison is difficult because our analyses also differed on degrees of freedom. 
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
