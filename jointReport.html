@@ -999,7 +999,7 @@ summary(dinv.aov)</code></pre>
 </div>
 <div id="step-5-conclusion" class="section level2">
 <h2>Step 5: Conclusion</h2>
-<pre class="r"><code>codReport(Report_Type = 'pilot',
+<pre class="r"><code>codReport(Report_Type = 'joint',
           Article_ID = 'KIUKz', 
           Insufficient_Information_Errors = 0,
           Decision_Errors = 0, 
@@ -1025,10 +1025,9 @@ summary(dinv.aov)</code></pre>
 </tr>
 </tbody>
 </table>
-<p>This reproducibility check was a partial success. There was insufficient information to complete the analysis. None of the effects or significance findings from the accuracy analysis detailed in Section 3.1 were reproduced in our analysis. Some trends appeared to be reproduced: The range of affects of inversion on accuracy seemed to match the original paper somewhat, with the largest spread of values for percent accuracy of inversion in the Familiar Face Recognition Task.</p>
-<p>One possible explanation is that d’ may have been calculated differently in the original analysis from our replication. A reference was provided, but no actual equation for d’ was specified. They may not have centered their hit and false alarm rates, or they may have calculated hit rates and false alarms rates by including correct rejections and misses (the method to calculate hit and false alarm rate was not clarified in the write-up).</p>
-<p>Our figures do not reproduce the original paper’s figures, and our calculated degrees of freedom for the ANOVAs were larger than the originals. This may be due to authors’ unspecified exclusion of outliers.</p>
-<p>It is my sense, however, that I have failed to appropriately reproduce their analysis in some way because of my own confusion about how to carry out their analytical method because of INCOMPLETE INFORMATION ERROR, rather than missing or excluded data.</p>
+<p>This reproducibility check was a partial success.</p>
+<p>I initially could not reproduce the by-participant dataset from the by-trial data, but after contacting the author and receiving a prompt reply, I could exactly reproduce the by-participant dataset and corresponding descriptive statistics. The procedures I had done incorrectly were perhaps not entirely detailed in the paper, but I suspect that a reader with background in signal detection theory would have understood these procedures as standard practice.</p>
+<p>Results of the two main analyses and corresponding marginal means yielded effect sizes similar to those in the original paper, but that differed numerically. F-statistics were sometimes substantially different, although direct comparison is difficult because our analyses also differed on degrees of freedom.</p>
 <pre class="r"><code>devtools::session_info()</code></pre>
 <pre><code>##  setting  value                       
 ##  version  R version 3.3.3 (2017-03-06)

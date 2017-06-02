@@ -319,7 +319,7 @@ ggplot(data=d_inv,
 ## Step 5: Conclusion
 
 ```{r}
-codReport(Report_Type = 'copilot',
+codReport(Report_Type = 'joint',
           Article_ID = 'KIUKz', 
           Insufficient_Information_Errors = 0,
           Decision_Errors = 0, 
