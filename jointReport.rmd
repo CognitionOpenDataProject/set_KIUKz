@@ -18,6 +18,7 @@ output:
 #### Methods summary: 
 
 Participants completed three tasks: 1) a Familiar Face Recognition Task (FFR) in which famous faces were presented as targets and unknown faces as distractors; 2) a Human Face Categorization Task (HFC) in which human faces were presented as targets and animal faces as distractors; and 3) an Individual Face Recognition Task (IFR) in which different pictures of a single famous individual were presented as targets and unknown faces as distractors. 
+
 Each task consisted of a block of 140 stimuli presented upright, and a second block of 140 stimuli presented in an inverted orientation. No stimuli were repeated.
 
 To assess recognition, each block involved a Speed and Accuracy Boosting (SAB) procedure to force participants to use their fastest strategy and boost accuracy. This involved a Go/No-Go type paradigm in which participants had to respond whether they recognized the stimulus as the target before 600 ms, but had to inhibit response if the stimulus was not the target. If participants responded before the response deadline, they received positive audio feedback indicating whether it was a hit (correct: target) or negative audio feedback indicating a false alarm (incorrect: distractor). If they did not respond before the 600 ms deadline, they received positive audio feedback if the item was a distractor (correct rejection) or target (miss). Prior to each task, participants trained on a block of 20 targets and 20 distractors.
@@ -55,7 +56,6 @@ library(lmerTest)
 ## Step 2: Load data
 
 ```{r}
-setwd("~/Dropbox/Personal computer/Independent studies/Mike's Cognition project on data sharing policy/Co-piloting/Copilot #1/set_KIUKz")
 raw_data = read_excel("data.xlsx")
 
 # check number of subjects
@@ -74,7 +74,7 @@ tidy_data <- raw_data %>%
   filter(is.na(Stimuli)==FALSE) %>%   #remove missing trials
   mutate(accuracy = NA)  # initialize empty accuracy variable
 
-# sanity check: are accuracy components are mutually exclusive in original data?
+# sanity check: are accuracy components mutually exclusive in original data?
 d = data.frame(raw_data)
 table(d$Hit, d$FA, d$CR, d$Missed)
 # yes
@@ -260,8 +260,7 @@ compareValues(reportedValue = 0.37, obtainedValue = 0.37)
 
 ### Inferential statistics
 
-We ran two-way repeated measures ANOVA on accuracy (d') with task type and orientation as factors. (Because there was an imbalance in the orientation cells, we followed up with our own analysis, a linear mixed model.)
-We also ran an ANOVA on % accuracy change with face orientation with task type as a factor.
+We ran two-way repeated measures ANOVA on accuracy (d') with task type and orientation as factors. We also ran an ANOVA on % accuracy change with face orientation with task type as a factor.
 
 ```{r}
 # https://www.r-bloggers.com/two-way-anova-with-repeated-measures/
@@ -275,12 +274,6 @@ summary(m1)
 compareValues(reportedValue=797.3, obtainedValue=784.6)
 compareValues(reportedValue=399.4, obtainedValue=402.3)
 compareValues(reportedValue=50.91, obtainedValue=60.2)
-
-# Problem: nesting appeared unbalanaced due to some missing data from FFR Inverted, so I tried it as a linear mixed model:
-library(lme4)
-res2 = lmer(d ~ Task * InvCond + (1|subID), data=dt2)
-summary(res2)
-# everything is highly significant with effects in the desired directions
 ```
 
 
