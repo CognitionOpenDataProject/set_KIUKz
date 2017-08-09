@@ -10,7 +10,7 @@ output:
 #### Pilot: Maia ten Brink
 #### Co-Pilot: Maya Mathur
 #### Start date: 03/25/17
-#### End date: 03/27/2017 
+#### End date: 08/09/2017 
 
 -------
 
@@ -317,14 +317,15 @@ codReport(Report_Type = 'joint',
           Insufficient_Information_Errors = 0,
           Decision_Errors = 0, 
           Major_Numerical_Errors = 2, 
-          Minor_Numerical_Errors = 2)
+          Minor_Numerical_Errors = 2,
+          Author_Assistance = T)
 ```
 
 This reproducibility check was a partial success. 
 
 I initially could not reproduce the by-participant dataset from the by-trial data, but after contacting the author and receiving a prompt reply, I could exactly reproduce the by-participant dataset and corresponding descriptive statistics. The procedures I had done incorrectly were perhaps not entirely detailed in the paper, but I suspect that a reader with background in signal detection theory would have understood these procedures as standard practice. 
 
-Results of the two main analyses and corresponding marginal means yielded effect sizes similar to those in the original paper, but that differed numerically. F-statistics were sometimes substantially different, although direct comparison is difficult because our analyses also differed on degrees of freedom. 
+Results of the two main analyses and corresponding marginal means yielded effect sizes similar to those in the original paper, but that differed numerically. F-statistics were sometimes substantially different, although direct comparison is difficult because our analyses also differed on degrees of freedom. We followed up with the authors a second time to address these issues but received no response to our initial e-mail or a 2 week follow up reminder. As the issues cannot be resolved, this reproducibility check has to be marked as a failure depsite author assistance.
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
