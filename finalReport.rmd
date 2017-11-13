@@ -9,8 +9,10 @@ output:
 #### Article ID: KIUKz
 #### Pilot: Maia ten Brink
 #### Co-Pilot: Maya Mathur
-#### Start date: 03/25/17
-#### End date: 08/09/2017 
+#### Start date: Mar 25 2017
+#### End date: Aug 9 2017
+#### Final verification: Tom Hardwicke
+#### Date: Nov 10 2017
 
 -------
 
@@ -33,8 +35,10 @@ Findings reported in section 3.1: Across-participants accuracy.
 ------
 
 ```{r global_options, include=FALSE}
-require(knitr)
 knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+
+# prepare an empty report object, we will update this each time we run compareValues2()
+reportObject <- data.frame("Article_ID" = NA, "valuesChecked" = 0, "eyeballs" = 0, "Total_df" = 0, "Total_p" = 0, "Total_mean" = 0, "Total_sd" = 0, "Total_se" = 0, "Total_ci" = 0, "Total_bf" = 0, "Total_t" = 0, "Total_F" = 0, "Total_es" = 0, "Total_median" = 0, "Total_irr" = 0, "Total_r" = 0, "Total_z" = 0, "Total_coeff" = 0, "Total_n" = 0, "Total_x2" = 0, "Total_other" = 0, "Insufficient_Information_Errors" = 0, "Decision_Errors" = 0, "Major_Numerical_Errors" = 0, "Minor_Numerical_Errors" = 0, "Major_df" = 0, "Major_p" = 0, "Major_mean" = 0, "Major_sd" = 0, "Major_se" = 0, "Major_ci" = 0, "Major_bf" = 0, "Major_t" = 0, "Major_F" = 0, "Major_es" = 0, "Major_median" = 0, "Major_irr" = 0, "Major_r" = 0, "Major_z" = 0, "Major_coeff" = 0, "Major_n" = 0, "Major_x2" = 0, "Major_other" = 0, "affectsConclusion" = NA, "error_typo" = 0, "error_specification" = 0, "error_analysis" = 0, "error_data" = 0, "error_unidentified" = 0, "Author_Assistance" = NA, "resolved_typo" = 0, "resolved_specification" = 0, "resolved_analysis" = 0, "resolved_data" = 0, "correctionSuggested" = NA, "correctionPublished" = NA)
 ```
 
 ## Step 1: Load packages
@@ -51,12 +55,13 @@ library(CODreports) # custom report functions
 library(ggthemes)
 library(lme4)
 library(lmerTest)
+library(afex) # for anova
 ```
 
 ## Step 2: Load data
 
 ```{r}
-raw_data = read_excel("data.xlsx")
+raw_data = read_excel("data/data.xlsx")
 
 # check number of subjects
 dim( unique(raw_data[,1]) )
@@ -218,72 +223,83 @@ aggregate( d ~ Task + InvCond, dt2, mean)
 aggregate( d ~ Task + InvCond, dt2, sd)
 ```
 
-These descriptive statistics match the reported descriptive statistics: ![Besson et al. Descriptive Statistics](originalDescriptiveStats.png) (Besson et al., p. 37)
+These descriptive statistics appear to match the reported descriptive statistics: 
+
+![Besson et al. Descriptive Statistics](images/originalDescriptiveStats.png)
+
+Let's check explictly:
 
 ```{r}
 ###FFR
 ##Upright
 #mean:
-compareValues(reportedValue = 1.06, obtainedValue = 1.06)
+reportObject <- compareValues2(reportedValue = "1.06", obtainedValue = 1.06, valueType = 'mean')
 #stdev:
-compareValues(reportedValue = 0.41, obtainedValue = 0.41)
+reportObject <- compareValues2(reportedValue = "0.41", obtainedValue = 0.41, valueType = 'sd')
 ##Inverted
 #mean:
-compareValues(reportedValue = .13, obtainedValue = 0.13)
+reportObject <- compareValues2(reportedValue = ".13", obtainedValue = 0.13, valueType = 'mean')
 #stdev:
-compareValues(reportedValue = .28, obtainedValue = 0.28)
+reportObject <- compareValues2(reportedValue = ".28", obtainedValue = 0.28, valueType = 'sd')
 
 ###HFC
 ##Upright
 #mean:
-compareValues(reportedValue = 4.20, obtainedValue = 4.20)
+reportObject <- compareValues2(reportedValue = "4.20", obtainedValue = 4.20, valueType = 'mean')
 #stdev:
-compareValues(reportedValue = 0.52, obtainedValue = 0.52)
+reportObject <- compareValues2(reportedValue = "0.52", obtainedValue = 0.52, valueType = 'sd')
 ##Inverted
 #mean:
-compareValues(reportedValue = 3.85, obtainedValue = 3.85)
+reportObject <- compareValues2(reportedValue = "3.85", obtainedValue = 3.85, valueType = 'mean')
 #stdev:
-compareValues(reportedValue = 0.56, obtainedValue = 0.56)
+reportObject <- compareValues2(reportedValue = "0.56", obtainedValue = 0.56, valueType = 'sd')
 
 ###IFR
 ##Upright
 #mean:
-compareValues(reportedValue = 3.96, obtainedValue = 3.96)
+reportObject <- compareValues2(reportedValue = "3.96", obtainedValue = 3.96, valueType = 'mean')
 #stdev:
-compareValues(reportedValue = 0.47, obtainedValue = 0.47)
+reportObject <- compareValues2(reportedValue = "0.47", obtainedValue = 0.47, valueType = 'sd')
 ##Inverted
 #mean:
-compareValues(reportedValue = 2.18, obtainedValue = 2.18)
+reportObject <- compareValues2(reportedValue = "2.18", obtainedValue = 2.18, valueType = 'mean')
 #stdev:
-compareValues(reportedValue = 0.37, obtainedValue = 0.37)
+reportObject <- compareValues2(reportedValue = "0.37", obtainedValue = 0.37, valueType = 'sd')
 ```
 
 ### Inferential statistics
 
-We ran two-way repeated measures ANOVA on accuracy (d') with task type and orientation as factors. We also ran an ANOVA on % accuracy change with face orientation with task type as a factor.
+> A repeated measures two-way ANOVA on accuracy with task and orientation as factors revealed a clear main effect of the task (F(2, 22) = 784.6; p < 0.0005) and of the orientation (F(1, 23) = 402.3; p < 0.0005), as well as a significant interaction between them (F(2, 22) = 60.2; p < 0.0005).
 
 ```{r}
-# https://www.r-bloggers.com/two-way-anova-with-repeated-measures/
-
-# very helpful:
-# https://stats.stackexchange.com/questions/14088/why-do-lme-and-aov-return-different-results-for-repeated-measures-anova-in-r
-m1 = aov( d ~ (Task * InvCond) + Error(subID / (Task * InvCond)), data=dt2 )
-summary(m1)
+aov.out <- aov_ez(data = dt2, id = "subID", within = c("Task", "InvCond"), dv = "d", anova_table = list(correction = "none", es = "pes"), type = "III")
 
 # compare values
-compareValues(reportedValue=797.3, obtainedValue=784.6)
-compareValues(reportedValue=399.4, obtainedValue=402.3)
-compareValues(reportedValue=50.91, obtainedValue=60.2)
+reportObject <- compareValues2(reportedValue="2", obtainedValue=aov.out$anova_table$`num Df`[1], valueType = 'df')
+reportObject <- compareValues2(reportedValue="22", obtainedValue=aov.out$anova_table$`den Df`[1], valueType = 'df')
+reportObject <- compareValues2(reportedValue="784.6", obtainedValue=aov.out$anova_table$F[1], valueType = 'F')
+reportObject <- compareValues2(reportedValue="eyeballMATCH", obtainedValue=aov.out$anova_table$`Pr(>F)`[1], valueType = 'p')
+
+reportObject <- compareValues2(reportedValue="1", obtainedValue=aov.out$anova_table$`num Df`[2], valueType = 'df')
+reportObject <- compareValues2(reportedValue="23", obtainedValue=aov.out$anova_table$`den Df`[2], valueType = 'df')
+reportObject <- compareValues2(reportedValue="402.3", obtainedValue=aov.out$anova_table$F[2], valueType = 'F')
+reportObject <- compareValues2(reportedValue="eyeballMATCH", obtainedValue=aov.out$anova_table$`Pr(>F)`[2], valueType = 'p')
+
+reportObject <- compareValues2(reportedValue="2", obtainedValue=aov.out$anova_table$`num Df`[3], valueType = 'df')
+reportObject <- compareValues2(reportedValue="22", obtainedValue=aov.out$anova_table$`den Df`[3], valueType = 'df')
+reportObject <- compareValues2(reportedValue="60.2", obtainedValue=aov.out$anova_table$F[3], valueType = 'F')
+reportObject <- compareValues2(reportedValue="eyeballMATCH", obtainedValue=aov.out$anova_table$`Pr(>F)`[3], valueType = 'p')
 ```
 
+>the effect of inversion was computed (i.e. the difference between inverted face accuracy and upright faces accuracy divided by the upright faces accuracy; e.g. Russell, Duchaine, & Nakayama, 2009) and showed a significant difference between the three task (F(2, 22) = 151.4; p < 0.0005).
 
-Normed effect of inversion
 ```{r}
-dinv.aov <- with( d_inv,
-                 aov(inv.eff ~ Task + Error(subID/Task) ) )
-summary(dinv.aov)
+aov.out <- aov_ez(d = d_inv, id = 'subID', dv = "inv.eff", within = 'Task', anova_table = list(correction = "none", es = "pes"), type = "III")
 
-compareValues(reportedValue = 151.4, obtainedValue = 109.8)
+reportObject <- compareValues2(reportedValue = "2", obtainedValue = aov.out$anova_table$`num Df`, valueType = 'df')
+reportObject <- compareValues2(reportedValue = "22", obtainedValue = aov.out$anova_table$`den Df`, valueType = 'df')
+reportObject <- compareValues2(reportedValue = "151.4", obtainedValue = aov.out$anova_table$F, valueType = 'F')
+reportObject <- compareValues2(reportedValue = "eyeballMATCH", obtainedValue = aov.out$anova_table$`Pr(>F)`, valueType = 'p')
 ```
 
 
@@ -304,28 +320,66 @@ ggplot(data=d_inv,
   ggthemes::theme_few() +
   xlab("Task Condition") +
   ylab("% Accuracy on Inverted Faces")
-
 ```
 
 
 
 ## Step 5: Conclusion
 
-```{r}
-codReport(Report_Type = 'joint',
-          Article_ID = 'KIUKz', 
-          Insufficient_Information_Errors = 0,
-          Decision_Errors = 0, 
-          Major_Numerical_Errors = 2, 
-          Minor_Numerical_Errors = 2,
-          Author_Assistance = T)
-```
-
-This reproducibility check was a partial success. 
-
 I initially could not reproduce the by-participant dataset from the by-trial data, but after contacting the author and receiving a prompt reply, I could exactly reproduce the by-participant dataset and corresponding descriptive statistics. The procedures I had done incorrectly were perhaps not entirely detailed in the paper, but I suspect that a reader with background in signal detection theory would have understood these procedures as standard practice. 
 
 Results of the two main analyses and corresponding marginal means yielded effect sizes similar to those in the original paper, but that differed numerically. F-statistics were sometimes substantially different, although direct comparison is difficult because our analyses also differed on degrees of freedom. We followed up with the authors a second time to address these issues but received no response to our initial e-mail or a 2 week follow up reminder. As the issues cannot be resolved, this reproducibility check has to be marked as a failure depsite author assistance.
+
+```{r}
+reportObject$Article_ID <- "KIUKz"
+reportObject$affectsConclusion <- "no"
+reportObject$error_typo <- 0
+reportObject$error_specification <- 
+reportObject$error_analysis <- 0
+reportObject$error_data <- 0
+reportObject$error_unidentified <- 1
+reportObject$Author_Assistance <- T
+reportObject$resolved_typo <- 0
+reportObject$resolved_specification <- 1
+reportObject$resolved_analysis <- 0
+reportObject$resolved_data <- 0
+reportObject$correctionSuggested <- F
+reportObject$correctionPublished <- NA
+
+# decide on final outcome
+if(reportObject$Decision_Errors > 0 | reportObject$Major_Numerical_Errors > 0 | reportObject$Insufficient_Information_Errors > 0){
+  reportObject$finalOutcome <- "Failure"
+  if(reportObject$Author_Assistance == T){
+    reportObject$finalOutcome <- "Failure despite author assistance"
+  }
+}else{
+  reportObject$finalOutcome <- "Success"
+  if(reportObject$Author_Assistance == T){
+    reportObject$finalOutcome <- "Success with author assistance"
+  }
+}
+
+# save the report object
+filename <- paste0("reportObject_", reportObject$Article_ID,".csv")
+write_csv(reportObject, filename)
+```
+
+## Report Object
+
+```{r, echo = FALSE}
+# display report object in chunks
+kable(reportObject[2:10], align = 'l')
+kable(reportObject[11:20], align = 'l')
+kable(reportObject[21:25], align = 'l')
+kable(reportObject[26:30], align = 'l')
+kable(reportObject[31:35], align = 'l')
+kable(reportObject[36:40], align = 'l')
+kable(reportObject[41:45], align = 'l')
+kable(reportObject[46:51], align = 'l')
+kable(reportObject[52:57], align = 'l')
+```
+
+## Session information
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
